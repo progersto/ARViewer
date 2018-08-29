@@ -3,4 +3,11 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="colorGardientStart">#a6df00</color>
+    <color name="colorGardientEnd">#6dbb00</color>
+    <color name="colorBackground">#ecedea</color>
+    <color name="colorBackground2">#f8f8f8</color>
+    <color name="colorStatusBarStart">#cca6df00</color>
+    <color name="colorStatusBarEnd">#cc6dbb00</color>
+
 </resources>

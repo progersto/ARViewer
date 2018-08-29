@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AR project</string>
+    <string name="folders">Папки</string>
+    <string name="files">Файлы</string>
 </resources>
