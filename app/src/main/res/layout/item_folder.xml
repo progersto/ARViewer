@@ -1,45 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginEnd="8dp"
+    android:layout_marginStart="8dp"
     android:background="@android:color/transparent"
     android:gravity="center">
 
 
     <android.support.v7.widget.CardView
         android:id="@+id/cardView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="6dp"
         android:layout_marginTop="6dp"
-        android:layout_margin="8dp"
+        android:background="@color/colorStatusBarEnd"
+        android:paddingEnd="5dp"
+        android:paddingStart="5dp"
         android:paddingTop="5dp"
         app:cardCornerRadius="5dp"
         app:cardElevation="3dp">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:id="@+id/itemArImage"
-                android:layout_width="match_parent"
-                android:layout_height="190dp"
-                android:layout_gravity="center"
-                android:scaleType="centerCrop"
-                app:srcCompat="@drawable/uranus" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
+                <RelativeLayout
+                    android:layout_width="6dp"
+                    android:layout_height="match_parent"
+                    android:background="@color/colorStatusBarEnd">
+
+                </RelativeLayout>
+
                 <TextView
-                    android:id="@+id/nameItemImage"
+                    android:id="@+id/nameFolder"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
@@ -53,7 +51,7 @@
                     android:textSize="15sp" />
 
                 <RelativeLayout
-                    android:id="@+id/menuImageItem"
+                    android:id="@+id/menuFolderItem"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
@@ -70,7 +68,6 @@
                         app:srcCompat="@drawable/ic_menu" />
                 </RelativeLayout>
 
-            </LinearLayout>
         </LinearLayout>
     </android.support.v7.widget.CardView>
 </LinearLayout>
