@@ -1,4 +1,4 @@
-package com.natife.arproject
+package com.natife.arproject.arobjectlist
 
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
-import java.util.ArrayList
+import com.natife.arproject.R
 
 class MultiViewTypeAdapter(private val list: MutableList<Model>, private val imageListener: OnItemImageListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -63,24 +63,24 @@ class MultiViewTypeAdapter(private val list: MutableList<Model>, private val ima
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, listPosition: Int) {
         when (list[listPosition].type) {
             Model.TEXT_TYPE ->
-                (holder as TextTypeViewHolder).txtType.text = list[listPosition].text
+                (holder as TextTypeViewHolder).txtType.text = list[listPosition].name
 
             Model.FOLDER_TYPE -> {
-                (holder as FolderTypeViewHolder).nameFolder.text = list[listPosition].text
+                (holder as FolderTypeViewHolder).nameFolder.text = list[listPosition].name
                 holder.menuFolderItem.setOnClickListener {
-
+                    imageListener.onItemMenuClick(holder.adapterPosition)
                 }
             }
 
             Model.IMAGE_TYPE -> {
-                var name = list[listPosition].text
+                var name = list[listPosition].name
                 name = name.substring(0, 1).toUpperCase() + name.substring(1);
                 (holder as ImageTypeViewHolder).nameItemImage.text = name
 
                 holder.menuImageItem.setOnClickListener {
-
+                    imageListener.onItemMenuClick(holder.adapterPosition)
                 }
-                holder.itemArImage.setImageResource(list[listPosition].image)
+                list[listPosition].image?.let { holder.itemArImage.setImageResource(it) }
 
 //                val listener = View.OnClickListener {
 //                    imageListener.onItemObjClick(holder.adapterPosition)

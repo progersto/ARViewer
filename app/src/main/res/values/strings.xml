@@ -2,4 +2,14 @@
     <string name="app_name">AR project</string>
     <string name="folders">Папки</string>
     <string name="files">Файлы</string>
+
+    <string name="bottom_sheet_option_rename">Переименовать</string>
+    <string name="bottom_sheet_option_move">Переместить</string>
+    <string name="bottom_sheet_option_delete">Удалить</string>
+
+    <string name="rename_file">Переименование файла</string>
+    <string name="rename_folder">Переименование папки</string>
+    <string name="ok">Ок</string>
+    <string name="cancel">Отмена</string>
+
 </resources>
