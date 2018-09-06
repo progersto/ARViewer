@@ -47,6 +47,10 @@ dependencies {
     implementation 'android.arch.persistence.room:runtime:1.1.1'
     annotationProcessor "android.arch.persistence.room:compiler:1.1.1"
     kapt "android.arch.persistence.room:compiler:1.1.1"
+    //RxJava
+    implementation "android.arch.persistence.room:rxjava2:1.1.1"
+    implementation "io.reactivex.rxjava2:rxjava:2.1.10"
+    implementation "io.reactivex.rxjava2:rxandroid:2.0.2"
     // dagger 2
 
     kapt 'com.google.dagger:dagger-compiler:2.16'

@@ -6,7 +6,7 @@ import com.natife.arproject.di.DataBaseComponent
 import com.natife.arproject.di.DatabaseModule
 
 class MyApp : Application() {
-    private var dataBaseComponent: DataBaseComponent? = null
+
 //    private var listsComponent: ListsComponent? = null
 
     override fun onCreate() {
@@ -23,9 +23,14 @@ class MyApp : Application() {
         return this
     }
 
-    fun getDataBaseComponent(): DataBaseComponent? {
-        return dataBaseComponent
+    companion object {
+        private lateinit var dataBaseComponent: DataBaseComponent
+
+        fun getDataBaseComponent(): DataBaseComponent {
+            return dataBaseComponent
+        }
     }
+
 
 //    fun getListComponent(): ListsComponent? {
 //        return listsComponent

@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import com.natife.arproject.R
+import com.natife.arproject.data.entityRoom.Model
 
 class MultiViewTypeAdapter(private val list: MutableList<Model>, private val imageListener: OnItemImageListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 

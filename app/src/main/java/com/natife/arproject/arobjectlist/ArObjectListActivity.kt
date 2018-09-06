@@ -14,23 +14,30 @@ import android.widget.EditText
 import com.natife.arproject.*
 import com.natife.arproject.main.MainActivity
 import com.natife.arproject.menubuttomdialog.MenuBottomDialogFragment
-import android.view.inputmethod.InputMethodManager.HIDE_IMPLICIT_ONLY
-import android.content.Context.INPUT_METHOD_SERVICE
 import android.view.inputmethod.InputMethodManager
+import com.natife.arproject.data.entityRoom.Model
+import com.natife.arproject.data.entityRoom.ModelDao
+import javax.inject.Inject
 
 
-class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View ,OnMenuItemClick {
+class ArObjectListActivity  : AppCompatActivity(), ArObjectListContract.View ,OnMenuItemClick {
+
     private lateinit var mPresenter: ArObjectListContract.Presenter
     private var localPosition: Int = -1
     private lateinit var listGeneral: MutableList<Model>
     private lateinit var onItemImageListener: OnItemImageListener
     private lateinit var adapter: MultiViewTypeAdapter
+    @Inject lateinit var modelDao: ModelDao
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ar_object_list)
-        mPresenter = ArObjectListPresenter(this)
+
+        MyApp.getDataBaseComponent().inject(this)
+        mPresenter = ArObjectListPresenter(this, modelDao)
 
         initView()
         listGeneral = mPresenter.firstInit()
@@ -42,7 +49,17 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View ,OnM
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
         window.statusBarColor = ContextCompat.getColor(this, android.R.color.transparent)
         window.setBackgroundDrawable(background)
+        mPresenter.addFiles()
     }//onCreate
+
+
+
+
+    override fun added() {
+        createAdapter()
+    }
+
+
 
 
     private fun initView() {
@@ -113,3 +130,4 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View ,OnM
         createAdapter()
     }
 }
+

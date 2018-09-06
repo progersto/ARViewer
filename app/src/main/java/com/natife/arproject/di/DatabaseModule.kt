@@ -3,8 +3,7 @@ package com.natife.arproject.di
 import android.arch.persistence.room.Room
 import android.content.Context
 import com.natife.arproject.data.MyDatabase
-import com.natife.arproject.data.entityRoom.FileDataDao
-import com.natife.arproject.data.entityRoom.FolderDataDao
+import com.natife.arproject.data.entityRoom.ModelDao
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -24,15 +23,21 @@ class DatabaseModule(private val context: Context) {
         return Room.databaseBuilder(context, MyDatabase::class.java, "my-db").build()
     }
 
-    @Singleton
-    @Provides
-    fun provideFileDataDao(myDatabase: MyDatabase): FileDataDao {
-        return myDatabase.fileDataDao()
-    }
+//    @Singleton
+//    @Provides
+//    fun provideFileDataDao(myDatabase: MyDatabase): FileDataDao {
+//        return myDatabase.fileDataDao()
+//    }
+//
+//    @Singleton
+//    @Provides
+//    fun provideFolderDao(myDatabase: MyDatabase): FolderDataDao {
+//        return myDatabase.folderDataDao()
+//    }
 
     @Singleton
     @Provides
-    fun provideFolderDao(myDatabase: MyDatabase): FolderDataDao {
-        return myDatabase.folderDataDao()
+    fun provideFolderDao(myDatabase: MyDatabase): ModelDao {
+        return myDatabase.modelDao()
     }
 }//DatabaseModule
