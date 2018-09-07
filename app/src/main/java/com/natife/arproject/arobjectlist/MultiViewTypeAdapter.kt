@@ -10,7 +10,11 @@ import android.widget.TextView
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
 
-class MultiViewTypeAdapter(private val list: MutableList<Model>, private val imageListener: OnItemImageListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class MultiViewTypeAdapter(
+        private val list: MutableList<Model>,
+        private val imageListener: OnItemImageListener,
+        private val setFolder: Boolean)
+    : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val view: View
@@ -75,7 +79,7 @@ class MultiViewTypeAdapter(private val list: MutableList<Model>, private val ima
 
             Model.IMAGE_TYPE -> {
                 var name = list[listPosition].name
-                name = name.substring(0, 1).toUpperCase() + name.substring(1);
+//                name = name.substring(0, 1).toUpperCase() + name.substring(1);
                 (holder as ImageTypeViewHolder).nameItemImage.text = name
 
                 holder.menuImageItem.setOnClickListener {

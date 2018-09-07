@@ -25,16 +25,20 @@ class MenuBottomDialogFragment : BottomSheetDialogFragment() {
         onMenuItemClick = context as OnMenuItemClick
     }
 
-    @Nullable
-    override fun onCreateView(inflater: LayoutInflater,
-                              @Nullable container: ViewGroup?,
-                              @Nullable savedInstanceState: Bundle?): View? {
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.shit_dialog_ar_image, container, false)
         val dialogHeading: TextView = view.findViewById(R.id.dialogHeading)
         val btnDialogRename: TextView = view.findViewById(R.id.btnDialogRename)
         val btnDialogMove: TextView = view.findViewById(R.id.btnDialogMove)
         val btnDialogDelete: TextView = view.findViewById(R.id.btnDialogDelete)
-        dialogHeading.text = "name"
+
+        var name: String? = ""
+        if (arguments != null) {
+            name = arguments?.getString("name")
+        }
+
+        dialogHeading.text = name
         btnDialogRename.setOnClickListener {
             onMenuItemClick.rename()
             dismiss()

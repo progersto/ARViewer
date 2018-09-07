@@ -20,16 +20,16 @@ import com.natife.arproject.data.entityRoom.ModelDao
 import javax.inject.Inject
 
 
-class ArObjectListActivity  : AppCompatActivity(), ArObjectListContract.View ,OnMenuItemClick {
+class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnMenuItemClick {
 
     private lateinit var mPresenter: ArObjectListContract.Presenter
     private var localPosition: Int = -1
     private lateinit var listGeneral: MutableList<Model>
     private lateinit var onItemImageListener: OnItemImageListener
     private lateinit var adapter: MultiViewTypeAdapter
-    @Inject lateinit var modelDao: ModelDao
-
-
+    @Inject
+    lateinit var modelDao: ModelDao
+    private var setFolder: Boolean = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,8 +40,14 @@ class ArObjectListActivity  : AppCompatActivity(), ArObjectListContract.View ,On
         mPresenter = ArObjectListPresenter(this, modelDao)
 
         initView()
-        listGeneral = mPresenter.firstInit()
-        createAdapter()
+
+        if (!isInit(this)) {
+            mPresenter.firstInit()
+//            mPresenter.insertModel()
+            fistInit(this, true)// write in Preference
+        } else {
+            mPresenter.getGeneralList()
+        }
 
         //гардиент в статусбаре
         val window = this.window
@@ -49,24 +55,22 @@ class ArObjectListActivity  : AppCompatActivity(), ArObjectListContract.View ,On
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
         window.statusBarColor = ContextCompat.getColor(this, android.R.color.transparent)
         window.setBackgroundDrawable(background)
-        mPresenter.addFiles()
     }//onCreate
 
 
-
-
-    override fun added() {
-        createAdapter()
-    }
-
-
-
-
     private fun initView() {
+        addFolder.setOnClickListener {
+            val newFolder = Model(null, Model.FOLDER_TYPE, "Новая папка", null, null, null)
+            mPresenter.insertModel(newFolder)
+        }
+
         onItemImageListener = object : OnItemImageListener {
             override fun onItemMenuClick(position: Int) {
                 localPosition = position
                 val menuBottomDialogFragment = MenuBottomDialogFragment.newInstance()
+                val args = Bundle()
+                args.putString("name", listGeneral[position].name)
+                menuBottomDialogFragment.arguments = args
                 menuBottomDialogFragment.show(supportFragmentManager, "menu_bottom_dialog_fragment")
             }
 
@@ -79,8 +83,9 @@ class ArObjectListActivity  : AppCompatActivity(), ArObjectListContract.View ,On
     }
 
 
-    private fun createAdapter() {
-        adapter = MultiViewTypeAdapter(listGeneral, onItemImageListener)
+    override fun createAdapter(generalList: MutableList<Model>) {
+        listGeneral = generalList
+        adapter = MultiViewTypeAdapter(listGeneral, onItemImageListener, setFolder)
         recyclerAr.layoutManager = GridLayoutManager(this, 2).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
 
@@ -107,18 +112,22 @@ class ArObjectListActivity  : AppCompatActivity(), ArObjectListContract.View ,On
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
 
-        android.support.v7.app.AlertDialog.Builder(this)
+        val dialg = android.support.v7.app.AlertDialog.Builder(this)
                 .setTitle(title)
                 .setView(v)
                 .setPositiveButton(R.string.ok) { dialog, _ ->
-                    listGeneral[localPosition].name = newName.text.toString()
-                    createAdapter()
+                    val updatedModel = listGeneral[localPosition]
+                    updatedModel.name = newName.text.toString()
+                    mPresenter.updateModel(updatedModel)
                     dialog.dismiss()
-                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)}
-                .setNegativeButton(R.string.cancel){ dialog, _ ->
+                }
+                .setNegativeButton(R.string.cancel) { dialog, _ ->
                     dialog.dismiss()
-                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)}
+                }
                 .show()
+        dialg.setOnDismissListener {
+            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        }
     }
 
     override fun move() {
@@ -126,8 +135,7 @@ class ArObjectListActivity  : AppCompatActivity(), ArObjectListContract.View ,On
     }
 
     override fun delete() {
-        listGeneral.remove(listGeneral[localPosition])
-        createAdapter()
+        mPresenter.deleteModel(listGeneral[localPosition])
     }
 }
 

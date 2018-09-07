@@ -8,6 +8,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/bottom_sheet_option_rename"
+        android:singleLine="true"
+        android:maxLength="30"
         android:layout_marginEnd="16dp"
         android:layout_marginStart="16dp"/>
 
