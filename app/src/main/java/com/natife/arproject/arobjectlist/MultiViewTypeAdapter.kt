@@ -1,5 +1,6 @@
 package com.natife.arproject.arobjectlist
 
+import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -46,6 +47,7 @@ class MultiViewTypeAdapter(
     class FolderTypeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         internal var nameFolder: TextView = itemView.findViewById(R.id.nameFolder)
         internal var menuFolderItem: RelativeLayout = itemView.findViewById(R.id.menuFolderItem)
+        internal var folderCardView: CardView = itemView.findViewById(R.id.folderCardView)
     }
 
 
@@ -74,6 +76,9 @@ class MultiViewTypeAdapter(
                 (holder as FolderTypeViewHolder).nameFolder.text = list[listPosition].name
                 holder.menuFolderItem.setOnClickListener {
                     imageListener.onItemMenuClick(holder.adapterPosition)
+                }
+                holder.folderCardView.setOnClickListener {
+                    imageListener.onItemFolderClick(holder.adapterPosition)
                 }
             }
 

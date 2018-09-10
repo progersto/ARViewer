@@ -11,11 +11,11 @@ interface ArObjectListContract {
 
     interface Presenter {
 //        fun firstInit()
-        fun getGeneralList()
+        fun getGeneralList(parentFolderId: Int?)
         fun getTitleFromDialog(position: Int): Int
-        fun updateModel(model: Model)
-        fun deleteModel(model: Model)
-        fun insertModel(firstInit: Boolean)
+        fun updateModel(model: Model, parentFolderId: Int?)
+        fun deleteModel(model: Model, parentFolderId: Int?)
+        fun insertModel(firstInit: Boolean, parentFolderId: Int?)
         //        fun insertModel(vararg model: Model)
     }
 

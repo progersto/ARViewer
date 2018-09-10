@@ -13,11 +13,11 @@ interface ModelDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(vararg model: Model)
 
-    @Query("select * from Model where type = 2")
-    fun getImageList(): List<Model>
+    @Query("select * from Model where type = 2 and parentFolderId is :parentFolderId")
+    fun getImageList(parentFolderId: Int?): List<Model>
 
-    @Query("select * from Model where type = 1")
-    fun getFolderList(): List<Model>
+    @Query("select * from Model where type = 1 and parentFolderId is :parentFolderId")
+    fun getFolderList(parentFolderId: Int?): List<Model>
 
     @Update
     fun updateModel(model: Model)

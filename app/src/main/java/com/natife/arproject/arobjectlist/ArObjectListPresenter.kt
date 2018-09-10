@@ -11,18 +11,17 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
     private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
 
-    override fun insertModel(firstInit: Boolean) {
+    override fun insertModel(firstInit: Boolean, parentFolderId: Int?) {
         doAsync {
             if (firstInit) {
                 val imageList = mRepository.initList()
                 modelDao.insert(*imageList.toTypedArray())
             }else{
-                //todo
-                val newFolder = Model(null, Model.FOLDER_TYPE, "Новая папка", null, null, null)
+                val newFolder = Model(null, Model.FOLDER_TYPE, "Новая папка", null, null, parentFolderId)
                 modelDao.insert(newFolder)
             }
             uiThread {
-                getGeneralList()
+                getGeneralList(parentFolderId)
             }
         }
     }
@@ -38,18 +37,18 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
     }
 
 
-    override fun getGeneralList() {
+    override fun getGeneralList(parentFolderId: Int?) {
         doAsync {
-            val list = modelDao.getImageList()
+            val list = modelDao.getImageList(parentFolderId)
             uiThread {
-                getFolderList(list)
+                getFolderList(list, parentFolderId)
             }
         }
     }
 
-    private fun getFolderList(imageList: List<Model>) {
+    private fun getFolderList(imageList: List<Model>, parentFolderId: Int?) {
         doAsync {
-            val folderList = modelDao.getFolderList()
+            val folderList = modelDao.getFolderList(parentFolderId)
             uiThread {
                 val list = mRepository.createGeneralList(imageList, folderList)
                 mView.createAdapter(list)
@@ -57,20 +56,20 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
         }
     }
 
-    override fun updateModel(model: Model) {
+    override fun updateModel(model: Model, parentFolderId: Int?) {
         doAsync {
             modelDao.updateModel(model)
             uiThread {
-                getGeneralList()
+                getGeneralList(parentFolderId)
             }
         }
     }
 
-    override fun deleteModel(model: Model) {
+    override fun deleteModel(model: Model, parentFolderId: Int?) {
         doAsync {
             modelDao.delete(model)
             uiThread {
-                getGeneralList()
+                getGeneralList(parentFolderId)
             }
         }
     }
