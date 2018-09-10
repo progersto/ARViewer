@@ -9,7 +9,6 @@ import android.view.WindowManager
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.GridLayoutManager
-import android.util.Log
 import android.view.View
 import android.widget.EditText
 import com.natife.arproject.*
@@ -18,10 +17,6 @@ import com.natife.arproject.menubuttomdialog.MenuBottomDialogFragment
 import android.view.inputmethod.InputMethodManager
 import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.data.entityRoom.ModelDao
-import org.jetbrains.anko.alert
-import org.jetbrains.anko.customView
-import org.jetbrains.anko.noButton
-import org.jetbrains.anko.yesButton
 import javax.inject.Inject
 
 
@@ -29,7 +24,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
     private lateinit var mPresenter: ArObjectListContract.Presenter
     private var localPosition: Int = -1
-    private var movablePosition: Int = -1
+    private lateinit var movableItem: Model
     private lateinit var listGeneral: MutableList<Model>
     private lateinit var onItemImageListener: OnItemImageListener
     private lateinit var adapter: MultiViewTypeAdapter
@@ -81,8 +76,13 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 lastIdList.clear()
             }
         }
-        textMove.setOnClickListener {  }
-        textCancel.setOnClickListener { movePanel.visibility = View.GONE}
+        textMove.setOnClickListener {
+            //write in db new parentFolderId
+            movableItem.parentFolderId = parentFolderId
+            mPresenter.updateModel(movableItem, parentFolderId)
+            movePanel.visibility = View.GONE
+        }
+        textCancel.setOnClickListener { movePanel.visibility = View.GONE }
 
 
         onItemImageListener = object : OnItemImageListener {
@@ -108,21 +108,12 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 if (lastIdList.size > 0 && listGeneral[position].id == lastIdList[lastIdList.size - 1]) {
                     return
                 }
-                if (movablePosition != -1) {
-                    //write in db new parentFolderId
-                    val updatedModel = listGeneral[movablePosition]
-                    updatedModel.parentFolderId = listGeneral[position].id
-                    mPresenter.updateModel(updatedModel, parentFolderId)
-                    movablePosition = -1
-                } else {
-                    //go into folder
-                    parentFolderId = listGeneral[position].id
-                    mPresenter.getGeneralList(parentFolderId)
-                    if (parentFolderId != null) {
-                        lastIdList.add(parentFolderId!!)
-                    }
+                //go into folder
+                parentFolderId = listGeneral[position].id
+                mPresenter.getGeneralList(parentFolderId)
+                if (parentFolderId != null) {
+                    lastIdList.add(parentFolderId!!)
                 }
-
             }
         }
     }
@@ -188,7 +179,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     }
 
     override fun move() {
-        movablePosition = localPosition
+        movableItem = listGeneral[localPosition]
         headText.text = "Выберите папку"
         movePanel.visibility = View.VISIBLE
     }

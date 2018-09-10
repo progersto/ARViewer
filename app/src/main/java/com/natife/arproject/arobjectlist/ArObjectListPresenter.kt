@@ -17,7 +17,7 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
                 val imageList = mRepository.initList()
                 modelDao.insert(*imageList.toTypedArray())
             }else{
-                val newFolder = Model(null, Model.FOLDER_TYPE, "Новая папка", null, null, parentFolderId)
+                val newFolder = Model(0, Model.FOLDER_TYPE, "Новая папка", null, null, parentFolderId)
                 modelDao.insert(newFolder)
             }
             uiThread {
