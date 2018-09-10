@@ -9,13 +9,9 @@ interface ModelDao {
 //    @get:Query("SELECT * FROM FileData ORDER BY id")
 //    val listAccounts: Flowable<List<FileData>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(model: ArrayList<Model>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertModel(model: Model)
-//    @Insert(onConflict = OnConflictStrategy.REPLACE)
-//    fun insertModel(vararg model: Model)
+    fun insert(vararg model: Model)
 
     @Query("select * from Model where type = 2")
     fun getImageList(): List<Model>

@@ -42,8 +42,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         initView()
 
         if (!isInit(this)) {
-            mPresenter.firstInit()
-//            mPresenter.insertModel()
+            mPresenter.insertModel(true)
             fistInit(this, true)// write in Preference
         } else {
             mPresenter.getGeneralList()
@@ -60,8 +59,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
     private fun initView() {
         addFolder.setOnClickListener {
-            val newFolder = Model(null, Model.FOLDER_TYPE, "Новая папка", null, null, null)
-            mPresenter.insertModel(newFolder)
+            mPresenter.insertModel(false)
         }
 
         onItemImageListener = object : OnItemImageListener {

@@ -10,12 +10,12 @@ interface ArObjectListContract {
     }
 
     interface Presenter {
-        fun firstInit()
+//        fun firstInit()
         fun getGeneralList()
         fun getTitleFromDialog(position: Int): Int
         fun updateModel(model: Model)
         fun deleteModel(model: Model)
-        fun insertModel(model: Model)
+        fun insertModel(firstInit: Boolean)
         //        fun insertModel(vararg model: Model)
     }
 

@@ -11,10 +11,16 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
     private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
 
-    override fun firstInit() {
-        val imageList = mRepository.initList()
+    override fun insertModel(firstInit: Boolean) {
         doAsync {
-            modelDao.insert(imageList)
+            if (firstInit) {
+                val imageList = mRepository.initList()
+                modelDao.insert(*imageList.toTypedArray())
+            }else{
+                //todo
+                val newFolder = Model(null, Model.FOLDER_TYPE, "Новая папка", null, null, null)
+                modelDao.insert(newFolder)
+            }
             uiThread {
                 getGeneralList()
             }
@@ -63,15 +69,6 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
     override fun deleteModel(model: Model) {
         doAsync {
             modelDao.delete(model)
-            uiThread {
-                getGeneralList()
-            }
-        }
-    }
-
-    override fun insertModel(model: Model) {
-        doAsync {
-            modelDao.insertModel(model)
             uiThread {
                 getGeneralList()
             }
