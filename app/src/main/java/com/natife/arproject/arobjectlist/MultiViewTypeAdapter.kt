@@ -14,7 +14,7 @@ import com.natife.arproject.data.entityRoom.Model
 class MultiViewTypeAdapter(
         private val list: MutableList<Model>,
         private val imageListener: OnItemImageListener,
-        private val setFolder: Boolean)
+        private val move: Boolean)
     : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -74,9 +74,15 @@ class MultiViewTypeAdapter(
 
             Model.FOLDER_TYPE -> {
                 (holder as FolderTypeViewHolder).nameFolder.text = list[listPosition].name
-                holder.menuFolderItem.setOnClickListener {
-                    imageListener.onItemMenuClick(holder.adapterPosition)
+                if (move){
+                    holder.menuFolderItem.visibility = View.GONE
+                }else{
+                    holder.menuFolderItem.visibility = View.VISIBLE
+                    holder.menuFolderItem.setOnClickListener {
+                        imageListener.onItemMenuClick(holder.adapterPosition)
+                    }
                 }
+
                 holder.folderCardView.setOnClickListener {
                     imageListener.onItemFolderClick(holder.adapterPosition)
                 }

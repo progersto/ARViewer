@@ -30,7 +30,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     private lateinit var adapter: MultiViewTypeAdapter
     @Inject
     lateinit var modelDao: ModelDao
-    private var setFolder: Boolean = false
+    private var move: Boolean = false
     private var parentFolderId: Int? = null
     private var lastIdList: ArrayList<Int> = ArrayList()
 
@@ -78,11 +78,16 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         }
         textMove.setOnClickListener {
             //write in db new parentFolderId
+            move = false
+            movePanel.visibility = View.GONE
             movableItem.parentFolderId = parentFolderId
             mPresenter.updateModel(movableItem, parentFolderId)
-            movePanel.visibility = View.GONE
         }
-        textCancel.setOnClickListener { movePanel.visibility = View.GONE }
+        textCancel.setOnClickListener {
+            movePanel.visibility = View.GONE
+            move = false
+            mPresenter.getGeneralList(parentFolderId)
+        }
 
 
         onItemImageListener = object : OnItemImageListener {
@@ -121,7 +126,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
     override fun createAdapter(generalList: MutableList<Model>) {
         listGeneral = generalList
-        adapter = MultiViewTypeAdapter(listGeneral, onItemImageListener, setFolder)
+        adapter = MultiViewTypeAdapter(listGeneral, onItemImageListener, move)
         recyclerAr.layoutManager = GridLayoutManager(this, 2).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
 
@@ -182,6 +187,8 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         movableItem = listGeneral[localPosition]
         headText.text = "Выберите папку"
         movePanel.visibility = View.VISIBLE
+        move = true
+        mPresenter.getGeneralList(parentFolderId)
     }
 
     override fun delete() {
