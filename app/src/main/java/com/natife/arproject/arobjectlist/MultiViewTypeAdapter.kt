@@ -55,6 +55,7 @@ class MultiViewTypeAdapter(
         internal var itemArImage: ImageView = itemView.findViewById(R.id.itemArImage)
         internal var nameItemImage: TextView = itemView.findViewById(R.id.nameItemImage)
         internal var menuImageItem: RelativeLayout = itemView.findViewById(R.id.menuImageItem)
+        internal var backgroundMove: RelativeLayout = itemView.findViewById(R.id.backgroundMove)
     }
 
 
@@ -92,16 +93,20 @@ class MultiViewTypeAdapter(
                 var name = list[listPosition].name
 //                name = name.substring(0, 1).toUpperCase() + name.substring(1);
                 (holder as ImageTypeViewHolder).nameItemImage.text = name
-
-                holder.menuImageItem.setOnClickListener {
-                    imageListener.onItemMenuClick(holder.adapterPosition)
-                }
                 list[listPosition].image?.let { holder.itemArImage.setImageResource(it) }
 
-//                val listener = View.OnClickListener {
-//                    imageListener.onItemObjClick(holder.adapterPosition)
-//                }
-                holder.itemArImage.setOnClickListener { imageListener.onItemObjClick(holder.adapterPosition) }
+                if (move){
+                    holder.menuImageItem.visibility = View.GONE
+                    holder.backgroundMove.visibility = View.VISIBLE
+                }else{
+                    holder.menuImageItem.setOnClickListener {
+                        imageListener.onItemMenuClick(holder.adapterPosition)
+                    }
+                    holder.itemArImage.setOnClickListener { imageListener.onItemObjClick(holder.adapterPosition) }
+                    holder.menuImageItem.visibility = View.VISIBLE
+                    holder.backgroundMove.visibility = View.GONE
+                }
+
             }
         }
     }

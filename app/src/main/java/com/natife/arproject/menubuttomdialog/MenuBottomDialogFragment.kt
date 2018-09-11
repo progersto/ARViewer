@@ -15,8 +15,13 @@ class MenuBottomDialogFragment : BottomSheetDialogFragment() {
     private lateinit var onMenuItemClick: OnMenuItemClick
 
     companion object {
-        fun newInstance(): MenuBottomDialogFragment {
-            return MenuBottomDialogFragment()
+        fun newInstance(id: Int, name: String): MenuBottomDialogFragment {
+            return MenuBottomDialogFragment().apply {
+                arguments = Bundle().apply {
+                    putInt("pos", id)
+                    putString("name", name)
+                }
+            }
         }
     }
 
@@ -34,22 +39,32 @@ class MenuBottomDialogFragment : BottomSheetDialogFragment() {
         val btnDialogDelete: TextView = view.findViewById(R.id.btnDialogDelete)
 
         var name: String? = ""
-        if (arguments != null) {
-            name = arguments?.getString("name")
-        }
+        var pos: Int? = -1
+
+        name = arguments?.getString("name")
+        pos = arguments?.getInt("pos")
+
+
 
         dialogHeading.text = name
-        btnDialogRename.setOnClickListener {
-            onMenuItemClick.rename()
-            dismiss()
+        btnDialogRename.setOnClickListener { _ ->
+            pos?.also {
+                onMenuItemClick.rename(it)
+                dismiss()
+            }
+
         }
-        btnDialogMove.setOnClickListener {
-            onMenuItemClick.move()
-            dismiss()
+        btnDialogMove.setOnClickListener {_ ->
+            pos?.also {
+                onMenuItemClick.move(it)
+                dismiss()
+            }
         }
-        btnDialogDelete.setOnClickListener {
-            onMenuItemClick.delete()
-            dismiss()
+        btnDialogDelete.setOnClickListener {_ ->
+            pos?.also {
+                onMenuItemClick.delete(it)
+                dismiss()
+            }
         }
 
         return view

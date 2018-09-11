@@ -1,10 +1,15 @@
 package com.natife.arproject.arobjectlist
 
+import android.arch.lifecycle.MutableLiveData
+import android.widget.TextView
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
 
 class ArObjectListRepository : ArObjectListContract.Repository {
+
+
     private lateinit var listGeneral: MutableList<Model>
+    private val modelLiveData = MutableLiveData<Model>()
 
     companion object {
 
@@ -23,10 +28,8 @@ class ArObjectListRepository : ArObjectListContract.Repository {
         }
     }
 
-    override fun initList(): ArrayList<Model> {
-//        listFolder = java.util.ArrayList()
-//        listFolder.add(Model(null, Model.FOLDER_TYPE, "folder 1", null, null, null))
 
+    override fun initList(): ArrayList<Model> {
         val listImage: ArrayList<Model> = java.util.ArrayList()
         listImage.add(Model(null, Model.IMAGE_TYPE, "model", R.drawable.model, "model.sfb", null))
         listImage.add(Model(null, Model.IMAGE_TYPE, "tricycle", R.drawable.tricycle, "tricycle.sfb", null))
@@ -51,8 +54,17 @@ class ArObjectListRepository : ArObjectListContract.Repository {
         return listGeneral
     }
 
+
     override fun getGeneralList(): MutableList<Model> {
         return listGeneral
+    }
+
+    override fun getLifeDataModel(): MutableLiveData<Model> {
+        return modelLiveData
+    }
+
+    override fun moveModel(model: Model) {
+        modelLiveData.value = model
     }
 
 }

@@ -9,5 +9,8 @@
     <color name="colorBackground2">#f8f8f8</color>
     <color name="colorStatusBarStart">#cca6df00</color>
     <color name="colorStatusBarEnd">#cc6dbb00</color>
+    <color name="backgroundMove">#a3ffffff</color>
+    <color name="colorTextMoveSelected">#000000</color>
+    <color name="colorTextMove">#4f000000</color>
 
 </resources>

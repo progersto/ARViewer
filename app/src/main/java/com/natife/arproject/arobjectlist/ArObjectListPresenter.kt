@@ -1,5 +1,6 @@
 package com.natife.arproject.arobjectlist
 
+import android.arch.lifecycle.MutableLiveData
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.data.entityRoom.ModelDao
@@ -11,13 +12,13 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
     private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
 
-    override fun insertModel(firstInit: Boolean, parentFolderId: Int?) {
+    override fun insertModel(name: String, firstInit: Boolean, parentFolderId: Int?) {
         doAsync {
             if (firstInit) {
                 val imageList = mRepository.initList()
                 modelDao.insert(*imageList.toTypedArray())
             }else{
-                val newFolder = Model(0, Model.FOLDER_TYPE, "Новая папка", null, null, parentFolderId)
+                val newFolder = Model(null, Model.FOLDER_TYPE, name, null, null, parentFolderId)
                 modelDao.insert(newFolder)
             }
             uiThread {
@@ -72,5 +73,14 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
                 getGeneralList(parentFolderId)
             }
         }
+    }
+
+    override fun getLifeDataModel(): MutableLiveData<Model> {
+        return  mRepository.getLifeDataModel()
+    }
+
+
+    override fun moveModel(model: Model) {
+        mRepository.moveModel(model)
     }
 }
