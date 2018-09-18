@@ -2,6 +2,7 @@ package com.natife.arproject.arobjectlist
 
 import android.arch.lifecycle.MutableLiveData
 import com.natife.arproject.R
+import com.natife.arproject.R.drawable.model
 import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.data.entityRoom.ModelDao
 import org.jetbrains.anko.doAsync
@@ -66,9 +67,9 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
         }
     }
 
-    override fun deleteModel(model: Model, parentFolderId: Int?) {
+    override fun deleteModel(id: Int, parentFolderId: Int?) {
         doAsync {
-            modelDao.delete(model)
+            modelDao.delete(id)
             uiThread {
                 getGeneralList(parentFolderId)
             }

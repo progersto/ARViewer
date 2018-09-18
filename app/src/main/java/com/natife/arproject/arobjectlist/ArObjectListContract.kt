@@ -13,7 +13,7 @@ interface ArObjectListContract {
         fun getGeneralList(parentFolderId: Int?)
         fun getTitleFromDialog(model: Model): Int
         fun updateModel(model: Model, parentFolderId: Int?)
-        fun deleteModel(model: Model, parentFolderId: Int?)
+        fun deleteModel(id: Int, parentFolderId: Int?)
         fun insertModel(name: String, firstInit: Boolean, parentFolderId: Int?)
         fun getLifeDataModel(): MutableLiveData<Model>
         fun moveModel(model: Model)

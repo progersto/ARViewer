@@ -248,8 +248,9 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     }
 
     override fun delete(id: Int) {
-        val model = getModelFromId(id)
-        mPresenter.deleteModel(model, parentFolderId)
+//        val model = getModelFromId(id)
+//        mPresenter.deleteModel(model, parentFolderId)
+        mPresenter.deleteModel(id, parentFolderId)
     }
 
     private fun getModelFromId(id: Int): Model {

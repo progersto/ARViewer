@@ -6,10 +6,6 @@ import android.arch.persistence.room.*
 @Dao
 interface ModelDao {
 
-//    @get:Query("SELECT * FROM FileData ORDER BY id")
-//    val listAccounts: Flowable<List<FileData>>
-
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(vararg model: Model)
 
@@ -22,13 +18,10 @@ interface ModelDao {
     @Update
     fun updateModel(model: Model)
 
-    @Delete
-    fun delete(model: Model)
-//
-    // update bet
-//    @Query("UPDATE Model SET name = :name WHERE id =:id")
-//    fun updateNameFile(name: String, id: Int)
+//    @Delete
+//    fun delete(model: Model)
 
-
+    @Query("DELETE from Model where id =:id or parentFolderId =:id")
+    fun delete(id: Int)
 
 }//FileDataDao
