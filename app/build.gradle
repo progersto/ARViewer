@@ -60,8 +60,3 @@ dependencies {
 apply plugin: 'com.google.ar.sceneform.plugin'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
-
-sceneform.asset('sampledata/busterDrone.gltf',
-        'default',
-        'sampledata/busterDrone.sfa',
-        'src/main/assets/busterDrone')

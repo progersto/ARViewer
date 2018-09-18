@@ -1,7 +1,7 @@
 package com.natife.arproject.arobjectlist
 
 interface OnMenuItemClick {
-    fun rename(pos: Int)
-    fun move(pos: Int)
-    fun delete(pos: Int)
+    fun rename(id: Int)
+    fun move(id: Int)
+    fun delete(id: Int)
 }

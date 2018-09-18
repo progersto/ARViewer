@@ -28,9 +28,9 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
     }
 
 
-    override fun getTitleFromDialog(position: Int): Int {
+    override fun getTitleFromDialog(model: Model): Int {
         var message: Int = -1
-        when (mRepository.getGeneralList()[position].type) {
+        when (model.type) {
             Model.IMAGE_TYPE -> message = R.string.rename_file
             Model.FOLDER_TYPE -> message = R.string.rename_folder
         }

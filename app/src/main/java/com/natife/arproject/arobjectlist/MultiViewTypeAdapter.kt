@@ -14,7 +14,8 @@ import com.natife.arproject.data.entityRoom.Model
 class MultiViewTypeAdapter(
         private val list: MutableList<Model>,
         private val imageListener: OnItemImageListener,
-        private val move: Boolean)
+        private val move: Boolean,
+        private val idMovable: Int)
     : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -48,6 +49,7 @@ class MultiViewTypeAdapter(
         internal var nameFolder: TextView = itemView.findViewById(R.id.nameFolder)
         internal var menuFolderItem: RelativeLayout = itemView.findViewById(R.id.menuFolderItem)
         internal var folderCardView: CardView = itemView.findViewById(R.id.folderCardView)
+        internal var backgroundMoveFolder: RelativeLayout = itemView.findViewById(R.id.backgroundMoveFolder)
     }
 
 
@@ -77,15 +79,22 @@ class MultiViewTypeAdapter(
                 (holder as FolderTypeViewHolder).nameFolder.text = list[listPosition].name
                 if (move){
                     holder.menuFolderItem.visibility = View.GONE
+                    if (list[listPosition].id != idMovable){
+                        holder.folderCardView.setOnClickListener {
+                            imageListener.onItemFolderClick(holder.adapterPosition)
+                        }
+                        holder.backgroundMoveFolder.visibility = View.GONE
+                    }else{
+                        holder.backgroundMoveFolder.visibility = View.VISIBLE
+                    }
                 }else{
                     holder.menuFolderItem.visibility = View.VISIBLE
                     holder.menuFolderItem.setOnClickListener {
                         imageListener.onItemMenuClick(holder.adapterPosition)
                     }
-                }
-
-                holder.folderCardView.setOnClickListener {
-                    imageListener.onItemFolderClick(holder.adapterPosition)
+                    holder.folderCardView.setOnClickListener {
+                        imageListener.onItemFolderClick(holder.adapterPosition)
+                    }
                 }
             }
 
@@ -106,7 +115,6 @@ class MultiViewTypeAdapter(
                     holder.menuImageItem.visibility = View.VISIBLE
                     holder.backgroundMove.visibility = View.GONE
                 }
-
             }
         }
     }

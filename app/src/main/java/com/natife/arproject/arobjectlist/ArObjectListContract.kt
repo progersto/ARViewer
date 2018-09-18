@@ -11,7 +11,7 @@ interface ArObjectListContract {
 
     interface Presenter {
         fun getGeneralList(parentFolderId: Int?)
-        fun getTitleFromDialog(position: Int): Int
+        fun getTitleFromDialog(model: Model): Int
         fun updateModel(model: Model, parentFolderId: Int?)
         fun deleteModel(model: Model, parentFolderId: Int?)
         fun insertModel(name: String, firstInit: Boolean, parentFolderId: Int?)

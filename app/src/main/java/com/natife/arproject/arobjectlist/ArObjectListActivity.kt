@@ -28,9 +28,8 @@ import javax.inject.Inject
 class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnMenuItemClick {
 
     private lateinit var mPresenter: ArObjectListContract.Presenter
-    //    private var localPosition: Int = -1
     private var idMovable: Int = -1
-    //    private var movableItem: Model? = null
+
     private lateinit var listGeneral: MutableList<Model>
     private lateinit var onItemImageListener: OnItemImageListener
     private lateinit var adapter: MultiViewTypeAdapter
@@ -79,7 +78,6 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                         value.parentFolderId = parentFolderId
                         mPresenter.updateModel(value, parentFolderId)
                     }
-
                 }
             }
         })
@@ -122,15 +120,9 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         onItemImageListener = object : OnItemImageListener {
 
             override fun onItemMenuClick(position: Int) {
-//                localPosition = position
-//                idMovable = listGeneral[position].id!!
                 listGeneral[position].id?.let { idMovable = it }
 
-
                 val menuBottomDialogFragment = MenuBottomDialogFragment.newInstance(idMovable, listGeneral[position].name)
-                val args = Bundle()
-                args.putString("name", listGeneral[position].name)
-                menuBottomDialogFragment.arguments = args
                 menuBottomDialogFragment.show(supportFragmentManager, "menu_bottom_dialog_fragment")
             }
 
@@ -147,6 +139,8 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 //                if (move &&  movableItem.id == listGeneral[position].id) {//dont move into folder
 //                    return
 //                }
+
+
                 // protection from logging in to a moved folder
                 if (lastIdList.size > 0 && listGeneral[position].id == lastIdList[lastIdList.size - 1]) {
                     return
@@ -154,10 +148,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 //go into folder
                 parentFolderId = listGeneral[position].id
                 mPresenter.getGeneralList(parentFolderId)
-//                mPresenter.moveModel(listGeneral[position])//передаем перемещаемую модель
-//                movableItem?.let {
-//                    mPresenter.moveModel(it)
-//                }
+
                 mPresenter.getLifeDataModel().value?.let {
                     mPresenter.moveModel(it)
                 }
@@ -172,7 +163,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
     override fun createAdapter(generalList: MutableList<Model>) {
         listGeneral = generalList
-        adapter = MultiViewTypeAdapter(listGeneral, onItemImageListener, move)
+        adapter = MultiViewTypeAdapter(listGeneral, onItemImageListener, move, idMovable)
         recyclerAr.layoutManager = GridLayoutManager(this, 2).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
 
@@ -201,18 +192,22 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     }
 
 
-    override fun rename(pos: Int) {
+    override fun rename(id: Int) {
         val title: Int
-
         val v: View = layoutInflater.inflate(R.layout.dialog_rename, null)
         val newName = v.findViewById<EditText>(R.id.newName)
         val name: String
+       lateinit var model: Model
+        if (id!= -1){
+            model = getModelFromId(id)
+        }
+
         if (addFlag) {
             name = resources.getString(R.string.newFolder)
             title = R.string.createFolder
         } else {
-            title = mPresenter.getTitleFromDialog(pos)
-            name = listGeneral[pos].name
+            title = mPresenter.getTitleFromDialog(model)
+            name = model.name
         }
         newName.setText(name)
         newName.requestFocus()
@@ -227,9 +222,8 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                         mPresenter.insertModel(newName.text.toString(), false, parentFolderId)
                         addFlag = false
                     } else {
-                        val updatedModel = listGeneral[pos]
-                        updatedModel.name = newName.text.toString()
-                        mPresenter.updateModel(updatedModel, parentFolderId)
+                        model.name = newName.text.toString()
+                        mPresenter.updateModel(model, parentFolderId)
                     }
                     dialog.dismiss()
                 }
@@ -240,10 +234,25 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 .show()
         dialog.setOnDismissListener {
             imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+//            imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0)
         }
     }
 
     override fun move(id: Int) {
+        val model = getModelFromId(id)
+        mPresenter.moveModel(model)
+        headText.text = "Выберите папку"
+        movePanel.visibility = View.VISIBLE
+        move = true
+        mPresenter.getGeneralList(parentFolderId)
+    }
+
+    override fun delete(id: Int) {
+        val model = getModelFromId(id)
+        mPresenter.deleteModel(model, parentFolderId)
+    }
+
+    private fun getModelFromId(id: Int): Model {
         var model: Model? = null
         for (i in listGeneral.indices) {
             if (listGeneral[i].id == id) {
@@ -251,15 +260,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 break
             }
         }
-        mPresenter.moveModel(model!!)
-        headText.text = "Выберите папку"
-        movePanel.visibility = View.VISIBLE
-        move = true
-        mPresenter.getGeneralList(parentFolderId)
-    }
-
-    override fun delete(pos: Int) {
-        mPresenter.deleteModel(listGeneral[pos], parentFolderId)
+        return model!!
     }
 }
 
