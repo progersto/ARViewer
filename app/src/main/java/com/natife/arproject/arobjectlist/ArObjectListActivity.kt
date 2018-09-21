@@ -11,7 +11,6 @@ import android.view.WindowManager
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.GridLayoutManager
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -19,7 +18,6 @@ import com.natife.arproject.*
 import com.natife.arproject.main.MainActivity
 import com.natife.arproject.menubuttomdialog.MenuBottomDialogFragment
 import android.view.inputmethod.InputMethodManager
-import com.natife.arproject.R.drawable.model
 import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.data.entityRoom.ModelDao
 import javax.inject.Inject
@@ -30,7 +28,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     private lateinit var mPresenter: ArObjectListContract.Presenter
     private var idMovable: Int = -1
 
-    private lateinit var listGeneral: MutableList<Model>
+    private lateinit var recyclerlist: MutableList<Model>
     private lateinit var onItemImageListener: OnItemImageListener
     private lateinit var adapter: MultiViewTypeAdapter
     @Inject
@@ -38,6 +36,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     private var move: Boolean = false
     private var parentFolderId: Int? = null
     private var lastIdList: ArrayList<Int> = ArrayList()
+    private var folderNamesList: ArrayList<String> = ArrayList()
     private var addFlag: Boolean = false
 
 
@@ -97,6 +96,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         }
         back.setOnClickListener { _ ->
             if (lastIdList.size > 1) {
+                folderNamesList.removeAt(folderNamesList.size - 1)
                 val id = lastIdList[lastIdList.size - 2]
                 mPresenter.getGeneralList(id)
                 lastIdList.removeAt(lastIdList.size - 1)
@@ -120,34 +120,26 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         onItemImageListener = object : OnItemImageListener {
 
             override fun onItemMenuClick(position: Int) {
-                listGeneral[position].id?.let { idMovable = it }
+                recyclerlist[position].id?.let { idMovable = it }
 
-                val menuBottomDialogFragment = MenuBottomDialogFragment.newInstance(idMovable, listGeneral[position].name)
+                val menuBottomDialogFragment = MenuBottomDialogFragment.newInstance(idMovable, recyclerlist[position].name)
                 menuBottomDialogFragment.show(supportFragmentManager, "menu_bottom_dialog_fragment")
             }
 
             //for show AR
             override fun onItemObjClick(position: Int) {
                 val intent = Intent(this@ArObjectListActivity, MainActivity::class.java)
-                intent.putExtra("name", listGeneral[position].vrImage)
+                intent.putExtra("name", recyclerlist[position].vrImage)
                 startActivity(intent)
             }
 
             //for move item
             override fun onItemFolderClick(position: Int) {
-                //double-click protection
-//                if (move &&  movableItem.id == listGeneral[position].id) {//dont move into folder
-//                    return
-//                }
-
-
-                // protection from logging in to a moved folder
-                if (lastIdList.size > 0 && listGeneral[position].id == lastIdList[lastIdList.size - 1]) {
-                    return
-                }
-                //go into folder
-                parentFolderId = listGeneral[position].id
+                parentFolderId = recyclerlist[position].id
                 mPresenter.getGeneralList(parentFolderId)
+
+                //todo доделать тулбар
+                folderNamesList.add(recyclerlist[position].name)
 
                 mPresenter.getLifeDataModel().value?.let {
                     mPresenter.moveModel(it)
@@ -161,9 +153,9 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     }
 
 
-    override fun createAdapter(generalList: MutableList<Model>) {
-        listGeneral = generalList
-        adapter = MultiViewTypeAdapter(listGeneral, onItemImageListener, move, idMovable)
+    override fun createAdapter(newList: MutableList<Model>) {
+        recyclerlist = newList
+        adapter = MultiViewTypeAdapter(recyclerlist, onItemImageListener, move, idMovable)
         recyclerAr.layoutManager = GridLayoutManager(this, 2).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
 
@@ -175,19 +167,25 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 }
             }
         }
-        setBackOrInfo()
+        changeHead()
     }
 
 
-    private fun setBackOrInfo() {
+    private fun changeHead() {
         recyclerAr.itemAnimator = DefaultItemAnimator()
         recyclerAr.adapter = adapter
         if (parentFolderId == null) {
+            headText.visibility = View.GONE
+            logoTextImage.visibility = View.VISIBLE
             info.visibility = View.VISIBLE
             back.visibility = View.GONE
         } else {
             info.visibility = View.GONE
             back.visibility = View.VISIBLE
+            logoTextImage.visibility = View.GONE
+            headText.visibility = View.VISIBLE
+            headText.text = folderNamesList[folderNamesList.size - 1]
+
         }
     }
 
@@ -225,39 +223,35 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                         model.name = newName.text.toString()
                         mPresenter.updateModel(model, parentFolderId)
                     }
+                    imm.hideSoftInputFromWindow(newName.windowToken, 0)
                     dialog.dismiss()
                 }
                 .setNegativeButton(R.string.cancel) { dialog, _ ->
                     addFlag = false
+                    imm.hideSoftInputFromWindow(newName.windowToken, 0)
                     dialog.dismiss()
                 }
                 .show()
-        dialog.setOnDismissListener {
-            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
-//            imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0)
-        }
+        dialog.setCanceledOnTouchOutside(false)
     }
 
     override fun move(id: Int) {
         val model = getModelFromId(id)
         mPresenter.moveModel(model)
-        headText.text = "Выберите папку"
         movePanel.visibility = View.VISIBLE
         move = true
         mPresenter.getGeneralList(parentFolderId)
     }
 
     override fun delete(id: Int) {
-//        val model = getModelFromId(id)
-//        mPresenter.deleteModel(model, parentFolderId)
         mPresenter.deleteModel(id, parentFolderId)
     }
 
     private fun getModelFromId(id: Int): Model {
         var model: Model? = null
-        for (i in listGeneral.indices) {
-            if (listGeneral[i].id == id) {
-                model = listGeneral[i]
+        for (i in recyclerlist.indices) {
+            if (recyclerlist[i].id == id) {
+                model = recyclerlist[i]
                 break
             }
         }

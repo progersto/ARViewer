@@ -6,7 +6,7 @@ import com.natife.arproject.data.entityRoom.Model
 interface ArObjectListContract {
 
     interface View {
-        fun createAdapter(generalList: MutableList<Model>)
+        fun createAdapter(newList: MutableList<Model>)
     }
 
     interface Presenter {

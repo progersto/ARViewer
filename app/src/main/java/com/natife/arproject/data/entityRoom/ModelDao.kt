@@ -17,9 +17,8 @@ interface ModelDao {
 
     @Update
     fun updateModel(model: Model)
-
-//    @Delete
-//    fun delete(model: Model)
+//    @Query("UPDATE Model set name =:id where id =:id")
+//    fun updateModel(id: Int)
 
     @Query("DELETE from Model where id =:id or parentFolderId =:id")
     fun delete(id: Int)
