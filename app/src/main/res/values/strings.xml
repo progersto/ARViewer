@@ -17,5 +17,17 @@
 
     <string name="version_game">Версия 1.0</string>
     <string name="contact">Разработчик <a href="https://natife.com">Natife.com</a></string>
+    <string name="Найти">Search</string>
+
+
+    <string name="step1_help">Для начала наведи камеру \n на то место (плоскость), \n где желаешь видеть \n свой 3D объект</string>
+    <string name="step2_help">Перемещение объекта</string>
+    <string name="step2_2_help">Передвигай объект используя один палец</string>
+    <string name="step3_help">Поворот объекта</string>
+    <string name="step3_2_help">Теперь поверни объект используя параллельное скольжение двух пальцев</string>
+    <string name="step4_help">Изменение масштаба объекта</string>
+    <string name="step4_2_help">Отлично! Можешь изменять масштаб 3D объекта с помощью двух пальцев</string>
+
+
 
 </resources>

@@ -11,6 +11,8 @@ import android.view.WindowManager
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.GridLayoutManager
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -38,6 +40,8 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     private var lastIdList: ArrayList<Int> = ArrayList()
     private var folderNamesList: ArrayList<String> = ArrayList()
     private var addFlag: Boolean = false
+    private lateinit var imm: InputMethodManager
+    private lateinit var newListModel: MutableList<Model>
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +50,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
         MyApp.getDataBaseComponent().inject(this)
         mPresenter = ArObjectListPresenter(this, modelDao)
+        imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
         initView()
 
@@ -85,16 +90,34 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
     private fun initView() {
         info.setOnClickListener {
+            if (searchIcon.visibility == View.GONE) hideSearch()
             val dialog = Dialog(this)
             dialog.window!!.setLayout(1000, ViewGroup.LayoutParams.MATCH_PARENT)
             dialog.setContentView(R.layout.dialog_inform)
             dialog.show()
+        }
+        searchIcon.setOnClickListener {
+            newListModel = java.util.ArrayList()
+            searchIcon.visibility = View.GONE
+            logoTextImage.visibility = View.GONE
+            headText.visibility = View.GONE
+            logoTextImage.visibility = View.GONE
+            addFolder.visibility = View.GONE
+            clearImage.visibility = View.VISIBLE
+            searchText.visibility = View.VISIBLE
+            searchText.addTextChangedListener(textWatcher)
+            searchText.requestFocus()
+            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        }
+        clearImage.setOnClickListener {
+           hideSearch()
         }
         addFolder.setOnClickListener { _ ->
             addFlag = true
             rename(-1)
         }
         back.setOnClickListener { _ ->
+            if (searchIcon.visibility == View.GONE) hideSearch()
             if (lastIdList.size > 1) {
                 folderNamesList.removeAt(folderNamesList.size - 1)
                 val id = lastIdList[lastIdList.size - 2]
@@ -120,26 +143,28 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         onItemImageListener = object : OnItemImageListener {
 
             override fun onItemMenuClick(position: Int) {
+                if (searchIcon.visibility == View.GONE) hideSearch()
                 recyclerlist[position].id?.let { idMovable = it }
 
-                val menuBottomDialogFragment = MenuBottomDialogFragment.newInstance(idMovable, recyclerlist[position].name)
+                val menuBottomDialogFragment =
+                        MenuBottomDialogFragment.newInstance(idMovable, recyclerlist[position].name)
                 menuBottomDialogFragment.show(supportFragmentManager, "menu_bottom_dialog_fragment")
             }
 
-            //for show AR
+            // show AR
             override fun onItemObjClick(position: Int) {
+                if (searchIcon.visibility == View.GONE) hideSearch()
                 val intent = Intent(this@ArObjectListActivity, MainActivity::class.java)
                 intent.putExtra("name", recyclerlist[position].vrImage)
                 startActivity(intent)
             }
 
-            //for move item
             override fun onItemFolderClick(position: Int) {
                 parentFolderId = recyclerlist[position].id
-                mPresenter.getGeneralList(parentFolderId)
-
-                //todo доделать тулбар
                 folderNamesList.add(recyclerlist[position].name)
+
+                if (searchIcon.visibility == View.GONE) hideSearch()
+                mPresenter.getGeneralList(parentFolderId)
 
                 mPresenter.getLifeDataModel().value?.let {
                     mPresenter.moveModel(it)
@@ -152,10 +177,43 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         }
     }
 
+    private fun hideSearch() {
+        searchText.setText("")
+        searchText.visibility = View.GONE
+        clearImage.visibility = View.GONE
+        logoTextImage.visibility = View.VISIBLE
+        addFolder.visibility = View.VISIBLE
+        searchIcon.visibility = View.VISIBLE
+        imm.hideSoftInputFromWindow(searchText.windowToken, 0)
+        newListModel.clear()
+        mPresenter.getGeneralList(parentFolderId)
+    }
+
+
+    private val textWatcher = object : TextWatcher {
+        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+            newListModel.clear()
+            for (i in recyclerlist.indices) {
+                var name = recyclerlist[i].name
+                name = name.substring(0, 1).toLowerCase() + name.substring(1);
+                if (name.contains(s, true) || recyclerlist[i].type == Model.TEXT_TYPE) {
+                    newListModel.add(recyclerlist[i])
+                }
+            }
+            createAdapter(newListModel)
+        }
+
+        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+        override fun afterTextChanged(s: Editable) {}
+    }
 
     override fun createAdapter(newList: MutableList<Model>) {
-        recyclerlist = newList
-        adapter = MultiViewTypeAdapter(recyclerlist, onItemImageListener, move, idMovable)
+        if (searchIcon.visibility == View.VISIBLE) {
+            recyclerlist = java.util.ArrayList()
+            recyclerlist.addAll(newList)
+        }
+
+        adapter = MultiViewTypeAdapter(newList, onItemImageListener, move, idMovable)
         recyclerAr.layoutManager = GridLayoutManager(this, 2).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
 
@@ -175,17 +233,20 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         recyclerAr.itemAnimator = DefaultItemAnimator()
         recyclerAr.adapter = adapter
         if (parentFolderId == null) {
-            headText.visibility = View.GONE
-            logoTextImage.visibility = View.VISIBLE
+            if (searchIcon.visibility == View.VISIBLE){
+                headText.visibility = View.GONE
+                logoTextImage.visibility = View.VISIBLE
+            }
             info.visibility = View.VISIBLE
             back.visibility = View.GONE
         } else {
             info.visibility = View.GONE
             back.visibility = View.VISIBLE
-            logoTextImage.visibility = View.GONE
-            headText.visibility = View.VISIBLE
+            if (searchIcon.visibility == View.VISIBLE){
+                logoTextImage.visibility = View.GONE
+                headText.visibility = View.VISIBLE
+            }
             headText.text = folderNamesList[folderNamesList.size - 1]
-
         }
     }
 
@@ -195,8 +256,8 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         val v: View = layoutInflater.inflate(R.layout.dialog_rename, null)
         val newName = v.findViewById<EditText>(R.id.newName)
         val name: String
-       lateinit var model: Model
-        if (id!= -1){
+        lateinit var model: Model
+        if (id != -1) {
             model = getModelFromId(id)
         }
 
@@ -209,7 +270,6 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         }
         newName.setText(name)
         newName.requestFocus()
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
 
         val dialog = android.support.v7.app.AlertDialog.Builder(this)
@@ -256,6 +316,14 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
             }
         }
         return model!!
+    }
+
+
+    override fun onBackPressed() {
+        if (searchText.isFocused) {
+            hideSearch()
+        } else
+            super.onBackPressed()
     }
 }
 

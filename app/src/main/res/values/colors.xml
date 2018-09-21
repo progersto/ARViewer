@@ -12,5 +12,6 @@
     <color name="backgroundMove">#a3ffffff</color>
     <color name="colorTextMoveSelected">#000000</color>
     <color name="colorTextMove">#4f000000</color>
+    <color name="colorKeyboard">#afffffff</color>
 
 </resources>
