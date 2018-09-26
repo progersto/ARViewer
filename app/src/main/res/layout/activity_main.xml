@@ -34,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
                 android:padding="10dp"
-                android:visibility="visible"
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -66,22 +66,24 @@
                 app:srcCompat="@drawable/ic_help" />
 
             <TextView
+                android:id="@+id/skipHelpText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Пропустить инструкцию"
                 android:textColor="@android:color/white"
                 android:textSize="12sp"
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/skipHelp"
+                app:layout_constraintEnd_toStartOf="@+id/skipHelpIcon"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
-                android:id="@+id/skipHelp"
+                android:id="@+id/skipHelpIcon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
                 android:padding="10dp"
-                android:visibility="visible"
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -92,26 +94,80 @@
 
         <android.support.constraint.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="350dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <TextView
+                android:id="@+id/textHead"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
                 android:gravity="center"
-                android:text="@string/step1_help"
                 android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/textBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/step2_2_help"
+                android:textColor="@android:color/white"
+                android:visibility="gone"
+                app:layout_constraintBottom_toTopOf="@+id/imageNextDoIt"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/imageNextDoIt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:adjustViewBounds="true"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
+
+            <!--<FrameLayout-->
+            <!--style="@style/BtnNext"-->
+            <!--android:layout_width="130dp"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:gravity="center"-->
+            <!--android:visibility="gone"-->
+            <!--app:layout_constraintBottom_toBottomOf="parent"-->
+            <!--app:layout_constraintEnd_toEndOf="parent"-->
+            <!--app:layout_constraintStart_toStartOf="parent">-->
+
+            <!--<TextView-->
+            <!--android:id="@+id/search"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="30dp"-->
+            <!--android:layout_gravity="center"-->
+            <!--android:gravity="center"-->
+            <!--android:text=" Далее"-->
+            <!--android:textColor="@android:color/black"-->
+            <!--android:textSize="12sp" />-->
+
+            <!--</FrameLayout>-->
 
         </android.support.constraint.ConstraintLayout>
 
 
         <android.support.constraint.ConstraintLayout
-            android:id="@+id/constraintLayout2"
+            android:id="@+id/footer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">

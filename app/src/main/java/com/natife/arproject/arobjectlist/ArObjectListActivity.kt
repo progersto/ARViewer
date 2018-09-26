@@ -17,11 +17,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import com.natife.arproject.*
-import com.natife.arproject.main.MainActivity
 import com.natife.arproject.menubuttomdialog.MenuBottomDialogFragment
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.data.entityRoom.ModelDao
+import com.natife.arproject.main.ArActivity
+import com.natife.arproject.utils.REQUEST_AR_ACTIVITY
+import com.natife.arproject.utils.fistInit
+import com.natife.arproject.utils.isInit
+import org.jetbrains.anko.startActivityForResult
 import javax.inject.Inject
 
 
@@ -154,9 +159,9 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
             // show AR
             override fun onItemObjClick(position: Int) {
                 if (searchIcon.visibility == View.GONE) hideSearch()
-                val intent = Intent(this@ArObjectListActivity, MainActivity::class.java)
+                val intent = Intent(this@ArObjectListActivity, ArActivity::class.java)
                 intent.putExtra("name", recyclerlist[position].vrImage)
-                startActivity(intent)
+                startActivityForResult(intent, REQUEST_AR_ACTIVITY)
             }
 
             override fun onItemFolderClick(position: Int) {
@@ -324,6 +329,13 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
             hideSearch()
         } else
             super.onBackPressed()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_AR_ACTIVITY && resultCode == RESULT_CANCELED){
+            Toast.makeText(this, getString(R.string.for_continue_install_ARCore), Toast.LENGTH_LONG).show();
+        }
     }
 }
 
