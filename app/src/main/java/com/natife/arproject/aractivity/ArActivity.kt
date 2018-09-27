@@ -1,22 +1,13 @@
-package com.natife.arproject.main
+package com.natife.arproject.aractivity
 
 import android.Manifest
 import android.app.Activity
-import android.app.Application
-import android.app.PendingIntent.getActivity
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Matrix
 import android.net.Uri
 import android.os.*
-import android.os.Environment.getExternalStoragePublicDirectory
-import android.support.annotation.NonNull
 import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.MotionEvent
@@ -31,17 +22,16 @@ import com.google.ar.sceneform.Scene
 
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.ux.*
-import com.natife.arproject.BuildConfig
 import com.natife.arproject.R
+import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import java.io.File
-import java.io.FileOutputStream
-import java.io.FileWriter
 
-class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
+class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContract.View {
+    private lateinit var mPresenter: ArActivityContract.Presenter
     private lateinit var arFragment: ArFragment
     private var andyRenderable: ModelRenderable? = null
     private var andy: TransformableNode? = null
@@ -52,12 +42,12 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        mPresenter = ArActivityPresenter(this)
 
         // Enable AR related functionality on ARCore supported devices only.
-        maybeEnableArButton()
+        checkArCoreApkAvailability()
 
         arFragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as ArFragment
-        arFragment.arSceneView.isDrawingCacheEnabled = true
         val name = intent.getStringExtra("name")
 
         //load 3D object
@@ -104,7 +94,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
             finish() }
         share.setOnClickListener { view ->
             getFile(false) {
-                askForPermission()
                 startShare(it)
                 progressBar.visibility = View.GONE
             }
@@ -124,14 +113,14 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
 
         doAsync {
             val firstBitmap = Bitmap.createBitmap(arFragment.arSceneView.width, arFragment.arSceneView.height, Bitmap.Config.ARGB_8888)
-            val secondBitmap = getBitmapFromView(screen)
+            val secondBitmap = mPresenter.getBitmapFromView(screen)
             PixelCopy.request(arFragment.arSceneView, firstBitmap, { res ->
                 if (!this@ArActivity.isDestroyed) {
 
-                    val finishBitmap = overlay(firstBitmap, secondBitmap)
+                    val finishBitmap = mPresenter.overlay(firstBitmap, secondBitmap)
                     Log.d("sss", "105")
                     doAsync {
-                        val file = createFileForIntent(flag, finishBitmap)
+                        val file = mPresenter.createFileForIntent(flag, finishBitmap, this@ArActivity)
                         Log.d("sss", "107")
                         uiThread {
                             callback(file)
@@ -140,51 +129,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
                 }
             }, Handler(handlerThread.looper))
         }
-    }
-
-
-    private fun createFileForIntent(flag: Boolean, bitmap: Bitmap): File {
-        lateinit var file: File
-        if (flag) {
-            val dir = File(getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), resources.getString(R.string.app_name) )// путь к файлу сохраняемого скрина
-            if (!dir.exists()) {
-               dir.mkdirs()
-            }
-            file = File(dir, "screen_ar_3d_viewr.png")
-        } else {
-            file = File(this.externalCacheDir, "screen_ar_3d_viewr.png")
-        }
-
-        val fOut = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fOut)
-        fOut.flush()
-        fOut.close()
-        file.setReadable(true, false)
-        return file
-    }
-
-
-    private fun getBitmapFromView(view: View): Bitmap {
-        val returnedBitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(returnedBitmap)
-        val bgDrawable = view.background
-        if (bgDrawable != null) {
-            //has background drawable, then draw it on the canvas
-            bgDrawable.draw(canvas)
-        } else {
-            //does not have background drawable, then draw white background on the canvas
-            canvas.drawColor(Color.TRANSPARENT)
-        }
-        view.draw(canvas)
-        return returnedBitmap
-    }
-
-    private fun overlay(bmp1: Bitmap, bmp2: Bitmap): Bitmap {
-        val bmOverlay = Bitmap.createBitmap(bmp1.width, bmp1.height, bmp1.config)
-        val canvas = Canvas(bmOverlay)
-        canvas.drawBitmap(bmp1, Matrix(), null)
-        canvas.drawBitmap(bmp2, 0f, 0f, null)
-        return bmOverlay
     }
 
 
@@ -222,11 +166,11 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
         }
     }
 
-    private fun maybeEnableArButton() {
+    private fun checkArCoreApkAvailability() {
         val availability = ArCoreApk.getInstance().checkAvailability(this)
         if (availability.isTransient) {
             // Re-query at 5Hz while compatibility is checked in the background.
-            Handler().postDelayed({ maybeEnableArButton() }, 200)
+            Handler().postDelayed({ checkArCoreApkAvailability() }, 200)
         }
         if (!availability.isSupported) {
             Toast.makeText(this, getString(R.string.device_unsupported), Toast.LENGTH_LONG).show()
@@ -325,6 +269,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
         logoTextImage.visibility = View.VISIBLE
         footer.visibility = View.VISIBLE
         fistInitAR(this, true)
+        setNumberScreen(this, 0)
         return
     }
 

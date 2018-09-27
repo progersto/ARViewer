@@ -23,7 +23,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.data.entityRoom.ModelDao
-import com.natife.arproject.main.ArActivity
+import com.natife.arproject.aractivity.ArActivity
 import com.natife.arproject.utils.REQUEST_AR_ACTIVITY
 import com.natife.arproject.utils.fistInit
 import com.natife.arproject.utils.isInit

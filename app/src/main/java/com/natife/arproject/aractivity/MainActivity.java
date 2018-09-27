@@ -1,19 +1,12 @@
-package com.natife.arproject.main;
+package com.natife.arproject.aractivity;
 
-import android.app.Activity;
-import android.app.ActivityManager;
-import android.content.Context;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
-import android.view.PixelCopy;
 import android.widget.Toast;
 
 import com.google.ar.core.Anchor;
@@ -24,16 +17,13 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.FrameTime;
-import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.Scene;
-import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 import com.natife.arproject.R;
 
 import java.util.Iterator;
-import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements Scene.OnUpdateListener {
     private static final String TAG = MainActivity.class.getSimpleName();

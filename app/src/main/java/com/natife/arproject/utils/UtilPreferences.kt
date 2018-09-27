@@ -5,6 +5,8 @@ import android.preference.PreferenceManager
 
 private var FIRST_INIT = "first_init"
 private var FIRST_INIT_AR = "first_init_ar"
+private var NUM_SCREEN = "numScreen"
+
 
 
 fun fistInit(context: Context, value: Boolean) {
@@ -29,4 +31,17 @@ fun fistInitAR(context: Context, value: Boolean) {
 fun isFistInitAR(context: Context): Boolean {
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
     return prefs.getBoolean(FIRST_INIT_AR, false)
+}
+
+
+fun setNumberScreen(context: Context, value: Int) {
+    val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+    val editor = prefs.edit()
+    editor.putInt(NUM_SCREEN, value)
+    editor.apply()
+}
+
+fun  getNumberScreen(context: Context): Int {
+    val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+    return prefs.getInt(NUM_SCREEN, 1)
 }

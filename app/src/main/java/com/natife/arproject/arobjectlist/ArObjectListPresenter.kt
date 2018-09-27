@@ -8,7 +8,6 @@ import com.natife.arproject.data.entityRoom.ModelDao
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
-
 class ArObjectListPresenter(private val mView: ArObjectListContract.View, private val modelDao: ModelDao) : ArObjectListContract.Presenter {
     private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
