@@ -1,20 +1,27 @@
 package com.natife.arproject.main
 
+import android.Manifest
 import android.app.Activity
+import android.app.Application
+import android.app.PendingIntent.getActivity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.net.Uri
 import android.os.*
-import android.support.constraint.ConstraintLayout
+import android.os.Environment.getExternalStoragePublicDirectory
+import android.support.annotation.NonNull
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.MotionEvent
 import android.view.PixelCopy
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.Toast
 import com.google.ar.core.*
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
@@ -24,6 +31,7 @@ import com.google.ar.sceneform.Scene
 
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.ux.*
+import com.natife.arproject.BuildConfig
 import com.natife.arproject.R
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
@@ -31,6 +39,7 @@ import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import java.io.File
 import java.io.FileOutputStream
+import java.io.FileWriter
 
 class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
     private lateinit var arFragment: ArFragment
@@ -88,24 +97,72 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
     }//onCreate
 
     private fun initView() {
-        back.setOnClickListener { finish() }
-        share.setOnClickListener {
-            val builder = StrictMode.VmPolicy.Builder()
-            StrictMode.setVmPolicy(builder.build())
-
-            val bitmap = Bitmap.createBitmap(arFragment.arSceneView.width, arFragment.arSceneView.height, Bitmap.Config.ARGB_8888)
-
-            doAsync {
-                PixelCopy.request(arFragment.arSceneView, bitmap, { res ->
-                    if (!this@ArActivity.isDestroyed) {
-                        val twoBitmap = getBitmapFromView(screen)
-                        startShare(overlay(bitmap, twoBitmap))
-                    }
-                }, Handler(Looper.getMainLooper()))
+        skipHelpIcon.setOnClickListener {
+            finishStepHelp()
+        }
+        back.setOnClickListener {
+            finish() }
+        share.setOnClickListener { view ->
+            getFile(false) {
+                askForPermission()
+                startShare(it)
+                progressBar.visibility = View.GONE
             }
         }
-        screenShot.setOnClickListener { }
+        screenShot.setOnClickListener { view ->
+            askForPermission()
+        }
     }
+
+
+    private fun getFile(flag: Boolean, callback: (file: File) -> Unit) {
+        progressBar.visibility = View.VISIBLE
+        val builder = StrictMode.VmPolicy.Builder()
+        StrictMode.setVmPolicy(builder.build())
+        val handlerThread = HandlerThread("PixelCopier")
+        handlerThread.start()
+
+        doAsync {
+            val firstBitmap = Bitmap.createBitmap(arFragment.arSceneView.width, arFragment.arSceneView.height, Bitmap.Config.ARGB_8888)
+            val secondBitmap = getBitmapFromView(screen)
+            PixelCopy.request(arFragment.arSceneView, firstBitmap, { res ->
+                if (!this@ArActivity.isDestroyed) {
+
+                    val finishBitmap = overlay(firstBitmap, secondBitmap)
+                    Log.d("sss", "105")
+                    doAsync {
+                        val file = createFileForIntent(flag, finishBitmap)
+                        Log.d("sss", "107")
+                        uiThread {
+                            callback(file)
+                        }
+                    }
+                }
+            }, Handler(handlerThread.looper))
+        }
+    }
+
+
+    private fun createFileForIntent(flag: Boolean, bitmap: Bitmap): File {
+        lateinit var file: File
+        if (flag) {
+            val dir = File(getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), resources.getString(R.string.app_name) )// путь к файлу сохраняемого скрина
+            if (!dir.exists()) {
+               dir.mkdirs()
+            }
+            file = File(dir, "screen_ar_3d_viewr.png")
+        } else {
+            file = File(this.externalCacheDir, "screen_ar_3d_viewr.png")
+        }
+
+        val fOut = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fOut)
+        fOut.flush()
+        fOut.close()
+        file.setReadable(true, false)
+        return file
+    }
+
 
     private fun getBitmapFromView(view: View): Bitmap {
         val returnedBitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
@@ -146,7 +203,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
                     ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
                         // Ensures next invocation of requestInstall() will either return
                         // INSTALLED or throw an exception.
-                        mUserRequestedInstall = false;
+                        mUserRequestedInstall = false
                         return
                     }
                     null -> {
@@ -156,14 +213,13 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
                 }
             }
         } catch (e: UnavailableUserDeclinedInstallationException) {
-            setResult(Activity.RESULT_CANCELED, intent)
+            setResult(Activity.RESULT_OK, intent)
             finish()
-            return;
+            return
         } catch (e: Exception) {  // Current catch statements.
             Log.d("Exception", e.printStackTrace().toString())
-            return;  // mSession is still null.
+            return  // mSession is still null.
         }
-
     }
 
     private fun maybeEnableArButton() {
@@ -253,31 +309,28 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
                 imageNextDoIt.setImageResource(R.drawable.ic_touch_3)
             }
             HELP_6 -> {
-                skipHelpText.visibility = View.GONE
-                skipHelpIcon.visibility = View.GONE
-                textHead.visibility = View.GONE
-                textBody.visibility = View.GONE
-                imageNextDoIt.visibility = View.GONE
-                back.visibility = View.VISIBLE
-                logoTextImage.visibility = View.VISIBLE
-                footer.visibility = View.VISIBLE
-                fistInitAR(this, true)
-                return
+                finishStepHelp()
             }
         }
         helpStep++
     }
 
+    private fun finishStepHelp(){
+        skipHelpText.visibility = View.GONE
+        skipHelpIcon.visibility = View.GONE
+        textHead.visibility = View.GONE
+        textBody.visibility = View.GONE
+        imageNextDoIt.visibility = View.GONE
+        back.visibility = View.VISIBLE
+        logoTextImage.visibility = View.VISIBLE
+        footer.visibility = View.VISIBLE
+        fistInitAR(this, true)
+        return
+    }
 
-    private fun startShare(bitmap: Bitmap) {
+
+    private fun startShare(file: File) {
         try {
-            val file = File(this.externalCacheDir, "logicchip.png")
-            val fOut = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut)
-            fOut.flush()
-            fOut.close()
-            file.setReadable(true, false)
-
             val intent = Intent(Intent.ACTION_SEND)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             intent.putExtra(Intent.EXTRA_SUBJECT, resources.getString(R.string.share_text))
@@ -291,4 +344,25 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener {
     }
 
 
+    private fun askForPermission() {
+        val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
+        ActivityCompat.requestPermissions(this, permissions, PERMISSIONS_CODE);
+    }
+
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            PERMISSIONS_CODE -> {
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    getFile(true) {
+                        progressBar.visibility = View.GONE
+                        Toast.makeText(this, "Скриншот сохранен", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    finish()
+                }
+                return
+            }
+        }
+    }
 }

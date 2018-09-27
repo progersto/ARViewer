@@ -1,5 +1,6 @@
 package com.natife.arproject.arobjectlist
 
+import android.app.Activity
 import android.app.Dialog
 import android.arch.lifecycle.Observer
 import android.content.Context
@@ -329,7 +330,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_AR_ACTIVITY && resultCode == RESULT_CANCELED){
+        if (requestCode == REQUEST_AR_ACTIVITY && resultCode == Activity.RESULT_OK){
             Toast.makeText(this, getString(R.string.for_continue_install_ARCore), Toast.LENGTH_LONG).show();
         }
     }

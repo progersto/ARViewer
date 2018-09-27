@@ -11,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+
         <fragment
             android:id="@+id/ux_fragment"
             android:name="com.google.ar.sceneform.ux.ArFragment"
@@ -54,18 +55,6 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:srcCompat="@mipmap/logo_text" />
 
-            <ImageView
-                android:id="@+id/help"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:padding="10dp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/ic_help" />
-
             <TextView
                 android:id="@+id/skipHelpText"
                 android:layout_width="wrap_content"
@@ -94,6 +83,7 @@
 
 
         <android.support.constraint.ConstraintLayout
+            android:id="@+id/constraintLayout2"
             android:layout_width="match_parent"
             android:layout_height="350dp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -117,8 +107,8 @@
                 android:id="@+id/textBody"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
                 android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center"
                 android:text="@string/step2_2_help"
                 android:textColor="@android:color/white"
@@ -139,29 +129,19 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
 
-            <!--<FrameLayout-->
-            <!--style="@style/BtnNext"-->
-            <!--android:layout_width="130dp"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:gravity="center"-->
-            <!--android:visibility="gone"-->
-            <!--app:layout_constraintBottom_toBottomOf="parent"-->
-            <!--app:layout_constraintEnd_toEndOf="parent"-->
-            <!--app:layout_constraintStart_toStartOf="parent">-->
-
-            <!--<TextView-->
-            <!--android:id="@+id/search"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="30dp"-->
-            <!--android:layout_gravity="center"-->
-            <!--android:gravity="center"-->
-            <!--android:text=" Далее"-->
-            <!--android:textColor="@android:color/black"-->
-            <!--android:textSize="12sp" />-->
-
-            <!--</FrameLayout>-->
 
         </android.support.constraint.ConstraintLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/screen"
+            app:layout_constraintEnd_toEndOf="@+id/screen"
+            app:layout_constraintStart_toStartOf="@+id/screen"
+            app:layout_constraintTop_toTopOf="@+id/screen"
+            app:layout_constraintVertical_bias="0.373" />
 
 
         <android.support.constraint.ConstraintLayout
