@@ -29,12 +29,10 @@ import com.natife.arproject.utils.isInit
 import org.jetbrains.anko.startActivityForResult
 import javax.inject.Inject
 
-
 class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnMenuItemClick {
 
     private lateinit var mPresenter: ArObjectListContract.Presenter
     private var idMovable: Int = -1
-
     private lateinit var recyclerlist: MutableList<Model>
     private lateinit var onItemImageListener: OnItemImageListener
     private lateinit var adapter: MultiViewTypeAdapter
@@ -159,9 +157,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
             // show AR
             override fun onItemObjClick(position: Int) {
                 if (searchIcon.visibility == View.GONE) hideSearch()
-                val intent = Intent(this@ArObjectListActivity, ArActivity::class.java)
-                intent.putExtra("name", recyclerlist[position].vrImage)
-                startActivityForResult(intent, REQUEST_AR_ACTIVITY)
+                startActivityForResult<ArActivity>(REQUEST_AR_ACTIVITY, "name" to recyclerlist[position].vrImage)
             }
 
             override fun onItemFolderClick(position: Int) {

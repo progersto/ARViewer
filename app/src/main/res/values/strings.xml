@@ -18,7 +18,8 @@
     <string name="version_game">Версия 1.0</string>
     <string name="contact">Разработчик <a href="https://natife.com">Natife.com</a></string>
     <string name="Найти">Search</string>
-
+    <string name="share_text">Скриншот приложения AR 3D Viewer</string>
+    <string name="share_URI"><a href="https://natife.com">https://natife.com</a></string>
 
     <string name="step1_help">Для начала наведи камеру \n на то место (плоскость), \n где желаешь видеть \n свой 3D объект</string>
     <string name="step2_help">Добавление 3D объекта</string>
@@ -29,8 +30,12 @@
     <string name="step4_2_help">Теперь поверни объект\n используя параллельное \nскольжение двух пальцев</string>
     <string name="step5_help">Изменение масштаба объекта</string>
     <string name="step5_2_help">Отлично! Можешь изменять\n масштаб 3D объекта\n с помощью двух пальцев</string>
+
     <string name="for_continue_install_ARCore">Для продолжения работы приложения необходимоустановить ARCore</string>
     <string name="device_unsupported">Устройство не поддерживает ARCore</string>
+    <string name="unable_load_renderable">Невозможно загрузить данный объект</string>
+
+
 
 
 </resources>
