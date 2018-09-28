@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.ar.core.Anchor;
@@ -17,8 +18,14 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.FrameTime;
+import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.Scene;
+import com.google.ar.sceneform.math.Vector3;
+import com.google.ar.sceneform.rendering.Color;
+import com.google.ar.sceneform.rendering.MaterialFactory;
 import com.google.ar.sceneform.rendering.ModelRenderable;
+import com.google.ar.sceneform.rendering.Renderable;
+import com.google.ar.sceneform.rendering.ShapeFactory;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 import com.natife.arproject.R;
@@ -60,7 +67,26 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
                             toast.show();
                             return null;
                         });
-//        arFragment.getArSceneView().getScene().setOnTouchListener();
+
+
+//        Anchor anchor = plane.createAnchor(plane.getCenterPose());
+//        AnchorNode anchorNode = new AnchorNode(anchor);
+//        anchorNode.setParent(arFragment.getArSceneView().getScene());
+//
+//        MaterialFactory
+//                .makeTransparentWithColor(this, new Color(1, .5f, .5f, .5f))
+//                .thenAccept(color -> {
+//                    Renderable renderable = ShapeFactory.makeCube(
+//                            new Vector3(0.42f, 0.0001f, 0.24f),
+//                            new Vector3(-0.22f, 0, -0.10f), color);
+//
+//                    Node node = new Node();
+//                    node.setRenderable(renderable);
+//                    node.setParent(anchorNode);
+//                });
+
+
+
 
         arFragment.setOnTapArPlaneListener(
                 (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {

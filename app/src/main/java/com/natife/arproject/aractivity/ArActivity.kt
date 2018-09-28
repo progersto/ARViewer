@@ -8,24 +8,35 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
+import android.opengl.Matrix
 import android.os.*
 import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat.startActivity
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.MotionEvent
 import android.view.PixelCopy
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import com.google.ar.core.*
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import com.google.ar.sceneform.AnchorNode
 import com.google.ar.sceneform.FrameTime
+import com.google.ar.sceneform.Node
 import com.google.ar.sceneform.Scene
+import com.google.ar.sceneform.math.Quaternion
+import com.google.ar.sceneform.math.Vector3
+import com.google.ar.sceneform.rendering.MaterialFactory
 
 import com.google.ar.sceneform.rendering.ModelRenderable
+import com.google.ar.sceneform.rendering.ShapeFactory
+import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.*
 import com.natife.arproject.R
+import com.natife.arproject.R.drawable.andy
+import com.natife.arproject.R.id.*
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
@@ -41,6 +52,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var mUserRequestedInstall = true
     private var mSession: Session? = null
     private var dialog: AlertDialog? = null
+    var mgView: ImageView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,24 +75,74 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                     null
                 }
 
-        //слушатель нажатия на плоскость (точки)
-        arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
-            if (andyRenderable == null) {
-                return@setOnTapArPlaneListener
-            }
-            if (!isFistInitAR(this)) {
-                changeHelpScreen()
-            }
+        ViewRenderable.builder()
+                .setView(this, R.layout.dialog_create_screen)
+                .build()
+                .thenAccept { renderable ->
+                    mgView = renderable.view as ImageView
+                }
 
+
+//        //слушатель нажатия на плоскость (точки)
+//        arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
+//            if (andyRenderable == null) {
+//                return@setOnTapArPlaneListener
+//            }
+//            if (!isFistInitAR(this)) {
+//                changeHelpScreen()
+//            }
+//
+//            // Create the Anchor.
+//            val anchor = hitResult.createAnchor()
+//            val anchorNode = AnchorNode(anchor)
+//            anchorNode.setParent(arFragment.arSceneView.scene)
+//
+//            // Create the transformable andy and add it to the anchor.
+//            andy = TransformableNode(arFragment.transformationSystem)
+//            andy!!.setParent(anchorNode)
+//            andy!!.renderable = andyRenderable
+//            andy!!.select()
+//        }
+
+        arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
             // Create the Anchor.
             val anchor = hitResult.createAnchor()
             val anchorNode = AnchorNode(anchor)
             anchorNode.setParent(arFragment.arSceneView.scene)
 
-            // Create the transformable andy and add it to the anchor.
             andy = TransformableNode(arFragment.transformationSystem)
+
+            var rotationController = andy!!.rotationController
+            rotationController.rotationRateDegrees = 0f
+
+            ViewRenderable.builder()
+                    .setView(this, R.layout.dialog_create_screen)
+                    .build()
+                    .thenAccept { renderable ->
+                        andy!!.renderable = renderable
+                        // Change the rotation
+                        if (plane.type == Plane.Type.VERTICAL) {
+                            val yAxis = plane.centerPose.yAxis
+                            val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                            andy!!.worldRotation = upQuat
+                        } else if (plane.type == Plane.Type.HORIZONTAL_DOWNWARD_FACING) {
+                            val yAxis = plane.centerPose.yAxis
+                            val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                            andy!!.worldRotation = upQuat
+                        } else if (plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING) {
+                            val yAxis = plane.centerPose.yAxis
+                            val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                            andy!!.worldRotation = upQuat
+                        }
+                    }
+                    .exceptionally { throwable ->
+                        Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
+                        null
+                    }
             andy!!.setParent(anchorNode)
-            andy!!.renderable = andyRenderable
             andy!!.select()
         }
 
@@ -199,10 +261,15 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         }
     }
 
+
     override fun onUpdate(frameTime: FrameTime) {
         //get the frame from the scene for shorthand
         val frame = arFragment.arSceneView.arFrame
         if (frame != null) {
+
+//            Matrix.translateM(mModelMatrix, 0, x, y, z);
+//            Matrix.rotateM(mModelMatrix, 0, rotationAngle, 0f, 1f, 0f);
+//            Matrix.translateM(mModelMatrix, 0, -x, -y, -z);
 
             if (!isFistInitAR(this)) {
 
@@ -237,9 +304,11 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                     }
                 }
             } else {
-                back.visibility = View.VISIBLE
-                logoTextImage.visibility = View.VISIBLE
-                footer.visibility = View.VISIBLE
+                if (back.visibility == View.GONE) {
+                    back.visibility = View.VISIBLE
+                    logoTextImage.visibility = View.VISIBLE
+                    footer.visibility = View.VISIBLE
+                }
             }
         }
     }
@@ -312,7 +381,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
     private fun askForPermission() {
         val permissions = arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
-        ActivityCompat.requestPermissions(this, permissions, PERMISSIONS_CODE);
+        ActivityCompat.requestPermissions(this, permissions, PERMISSIONS_CODE)
     }
 
 

@@ -34,8 +34,7 @@
     <string name="for_continue_install_ARCore">Для продолжения работы приложения необходимоустановить ARCore</string>
     <string name="device_unsupported">Устройство не поддерживает ARCore</string>
     <string name="unable_load_renderable">Невозможно загрузить данный объект</string>
-
-
+    <string name="please_wait">Пожалуйста, подождите...</string>
 
 
 </resources>
