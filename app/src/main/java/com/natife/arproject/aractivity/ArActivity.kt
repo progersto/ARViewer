@@ -5,9 +5,12 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.*
 import android.support.v4.app.ActivityCompat
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.MotionEvent
@@ -23,7 +26,6 @@ import com.google.ar.sceneform.Scene
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.ux.*
 import com.natife.arproject.R
-import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
@@ -38,6 +40,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var helpStep: Int = 0
     private var mUserRequestedInstall = true
     private var mSession: Session? = null
+    private var dialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,21 +94,40 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             finishStepHelp()
         }
         back.setOnClickListener {
-            finish() }
+            finish()
+        }
         share.setOnClickListener { view ->
+            if (dialog == null) {
+                createDialog()
+            } else {
+                dialog?.show()
+            }
             getFile(false) {
                 startShare(it)
-                progressBar.visibility = View.GONE
+                dialog?.dismiss()
             }
         }
         screenShot.setOnClickListener { view ->
+            if (dialog == null) {
+                createDialog()
+            } else {
+                dialog?.show()
+            }
             askForPermission()
         }
     }
 
 
+    private fun createDialog() {
+        dialog = android.support.v7.app.AlertDialog.Builder(this)
+                .setCancelable(false)
+                .show()
+        dialog?.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog?.setContentView(R.layout.dialog_create_screen)
+    }
+
+
     private fun getFile(flag: Boolean, callback: (file: File) -> Unit) {
-        progressBar.visibility = View.VISIBLE
         val builder = StrictMode.VmPolicy.Builder()
         StrictMode.setVmPolicy(builder.build())
         val handlerThread = HandlerThread("PixelCopier")
@@ -259,7 +281,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         helpStep++
     }
 
-    private fun finishStepHelp(){
+    private fun finishStepHelp() {
         skipHelpText.visibility = View.GONE
         skipHelpIcon.visibility = View.GONE
         textHead.visibility = View.GONE
@@ -269,7 +291,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         logoTextImage.visibility = View.VISIBLE
         footer.visibility = View.VISIBLE
         fistInitAR(this, true)
-        setNumberScreen(this, 0)
         return
     }
 
@@ -300,7 +321,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             PERMISSIONS_CODE -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     getFile(true) {
-                        progressBar.visibility = View.GONE
+                        dialog?.dismiss()
                         Toast.makeText(this, "Скриншот сохранен", Toast.LENGTH_LONG).show()
                     }
                 } else {

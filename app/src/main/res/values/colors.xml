@@ -13,5 +13,6 @@
     <color name="colorTextMoveSelected">#000000</color>
     <color name="colorTextMove">#4f000000</color>
     <color name="colorKeyboard">#afffffff</color>
+    <color name="colorDialog">#bababa</color>
 
 </resources>
