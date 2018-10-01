@@ -10,6 +10,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
+import com.squareup.picasso.Picasso
 
 class MultiViewTypeAdapter(
         private val list: MutableList<Model>,
@@ -102,7 +103,9 @@ class MultiViewTypeAdapter(
                 var name = list[listPosition].name
 //                name = name.substring(0, 1).toUpperCase() + name.substring(1);
                 (holder as ImageTypeViewHolder).nameItemImage.text = name
-                list[listPosition].image?.let { holder.itemArImage.setImageResource(it) }
+                list[listPosition].image?.let {
+                    Picasso.get().load(it).into(holder.itemArImage)
+                }
 
                 if (move){
                     holder.menuImageItem.visibility = View.GONE
@@ -111,7 +114,14 @@ class MultiViewTypeAdapter(
                     holder.menuImageItem.setOnClickListener {
                         imageListener.onItemMenuClick(holder.adapterPosition)
                     }
-                    holder.itemArImage.setOnClickListener { imageListener.onItemObjClick(holder.adapterPosition) }
+                    holder.itemArImage.setOnClickListener {
+                        imageListener.onItemObjClick(holder.adapterPosition)
+                    }
+                    holder.itemArImage.setOnLongClickListener {
+                        imageListener.onItemObjLongClick(holder.adapterPosition, list[listPosition].image!!)
+                        true}
+
+
                     holder.menuImageItem.visibility = View.VISIBLE
                     holder.backgroundMove.visibility = View.GONE
                 }

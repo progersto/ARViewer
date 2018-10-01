@@ -155,10 +155,18 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 menuBottomDialogFragment.show(supportFragmentManager, "menu_bottom_dialog_fragment")
             }
 
-            // show AR
             override fun onItemObjClick(position: Int) {
+                // 3D show
                 if (searchIcon.visibility == View.GONE) hideSearch()
-                startActivityForResult<ArActivity>(REQUEST_AR_ACTIVITY, "name" to recyclerlist[position].vrImage)
+                startActivityForResult<ArActivity>(REQUEST_AR_ACTIVITY,
+                        "name" to recyclerlist[position].vrImage)
+            }
+
+            override fun onItemObjLongClick(position: Int, res: Int) {
+                // 2D show
+               if (searchIcon.visibility == View.GONE) hideSearch()
+                startActivityForResult<ArActivity>(REQUEST_AR_ACTIVITY,
+                        "resImage" to res)
             }
 
             override fun onItemFolderClick(position: Int) {
