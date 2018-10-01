@@ -29,7 +29,6 @@ import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.*
 import com.natife.arproject.R
-import com.natife.arproject.R.drawable.andy
 import com.natife.arproject.utils.*
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
@@ -66,98 +65,110 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         val resImage = intent.getIntExtra("resImage", 0)
 
         if (resImage != 0) {
-            view2d = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
-            image = view2d!!.findViewById(R.id.image)
-            Picasso.get().load(resImage).into(image)
-
-            arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
-                if (objParent == null) {
-
-                    // Create the Anchor.
-                    val anchorParent = hitResult.createAnchor()
-                    val anchorNodeParent = AnchorNode(anchorParent)
-                    anchorNodeParent.setParent(arSceneView.scene)
-
-                    objParent = TransformableNode(arFragment.transformationSystem)
-                    objParent!!.setParent(anchorNodeParent)
-                    objParent!!.select()
-
-                    // Create the Anchor.
-                    val anchor = hitResult.createAnchor()
-                    val anchorNode = AnchorNode(anchor)
-                    anchorNode.setParent(arSceneView.scene)
-
-                    objChild = TransformableNode(arFragment.transformationSystem)
-                    objChild!!.rotationController.rotationRateDegrees = 0f//запрет врашения
-
-                    ViewRenderable.builder()
-                            .setView(this, view2d)
-                            .build()
-                            .thenAccept { renderable ->
-                                objChild!!.renderable = renderable
-                                // Change the rotation
-                                if (plane.type == Plane.Type.VERTICAL) {
-                                    val yAxis = plane.centerPose.yAxis
-                                    val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
-                                    val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-                                    objChild!!.worldRotation = upQuat
-                                } else if (plane.type == Plane.Type.HORIZONTAL_DOWNWARD_FACING) {
-                                    val yAxis = plane.centerPose.yAxis
-                                    val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
-                                    val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-                                    objChild!!.worldRotation = upQuat
-                                } else if (plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING) {
-                                    val yAxis = plane.centerPose.yAxis
-                                    val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
-                                    val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-                                    objChild!!.worldRotation = upQuat
-                                }
-                            }
-                            .exceptionally { throwable ->
-                                Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                                null
-                            }
-                    objChild!!.setParent(objParent)
-                    objChild!!.setOnTouchListener { hitTestResult, motionEvent ->
-                        objParent!!.select()
-                    }
-                }
-            }
+            create2DObj(resImage) //load 2D object
         } else {
-            //load 3D object
-            ModelRenderable.builder()
-                    .setSource(this, Uri.parse(name))
-                    .build()
-                    .thenAccept { renderable -> andyRenderable = renderable }
-                    .exceptionally { throwable ->
-                        Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                        null
-                    }
-
-            //слушатель нажатия на плоскость (точки)
-            arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
-                if (andyRenderable == null) {
-                    return@setOnTapArPlaneListener
-                }
-                if (!isFistInitAR(this)) {
-                    changeHelpScreen()
-                }
-
-                // Create the Anchor.
-                val anchor = hitResult.createAnchor()
-                val anchorNode = AnchorNode(anchor)
-                anchorNode.setParent(arSceneView.scene)
-
-                // Create the transformable andy and add it to the anchor.
-                objChild = TransformableNode(arFragment.transformationSystem)
-                objChild!!.setParent(anchorNode)
-                objChild!!.renderable = andyRenderable
-                objChild!!.select()
-            }//OnTapArPlaneListener
+          create3DObj(name)  //load 3D object
         }//if
         arSceneView.scene.addOnUpdateListener(this) //You can do this anywhere. I do it on activity creation post inflating the fragment
         initView()
     }//onCreate
+
+
+    private fun create3DObj(name: String){
+        //create object
+        ModelRenderable.builder()
+                .setSource(this, Uri.parse(name))
+                .build()
+                .thenAccept { renderable -> andyRenderable = renderable }
+                .exceptionally { throwable ->
+                    Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
+                    null
+                }
+
+        //слушатель нажатия на плоскость (точки)
+        arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
+            if (andyRenderable == null) {
+                return@setOnTapArPlaneListener
+            }
+            if (!isFistInitAR(this)) {
+                changeHelpScreen()
+            }
+
+            // Create the Anchor.
+            val anchor = hitResult.createAnchor()
+            val anchorNode = AnchorNode(anchor)
+            anchorNode.setParent(arSceneView.scene)
+
+            // Create the transformable object and add it to the anchor.
+            objChild = TransformableNode(arFragment.transformationSystem)
+            objChild!!.setParent(anchorNode)
+            objChild!!.renderable = andyRenderable
+            objChild!!.select()
+        }//OnTapArPlaneListener
+    }
+
+
+    private fun create2DObj(resImage: Int){
+        view2d = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
+        image = view2d!!.findViewById(R.id.image)
+        Picasso.get().load(resImage).into(image)
+
+        arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
+            if (objParent == null) {
+
+                // Create the Anchor Parent
+                val anchorParent = hitResult.createAnchor()
+                val anchorNodeParent = AnchorNode(anchorParent)
+                anchorNodeParent.setParent(arSceneView.scene)
+
+                //create empty obj for parent
+                objParent = TransformableNode(arFragment.transformationSystem)
+                objParent!!.setParent(anchorNodeParent)
+                objParent!!.select()
+
+                // Create the Anchor Child
+                val anchorChild = hitResult.createAnchor()
+                val anchorNodeChild = AnchorNode(anchorChild)
+                anchorNodeChild.setParent(arSceneView.scene)
+
+                objChild = TransformableNode(arFragment.transformationSystem)
+                objChild!!.rotationController.rotationRateDegrees = 0f//запрет вращения
+
+                //create object from View
+                ViewRenderable.builder()
+                        .setView(this, view2d)
+                        .build()
+                        .thenAccept { renderable ->
+                            objChild!!.renderable = renderable
+                            // Change the rotation
+                            if (plane.type == Plane.Type.VERTICAL) {
+                                val yAxis = plane.centerPose.yAxis
+                                val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                                val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                                objChild!!.worldRotation = upQuat
+                            } else if (plane.type == Plane.Type.HORIZONTAL_DOWNWARD_FACING) {
+                                val yAxis = plane.centerPose.yAxis
+                                val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                                val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                                objChild!!.worldRotation = upQuat
+                            } else if (plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING) {
+                                val yAxis = plane.centerPose.yAxis
+                                val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                                val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                                objChild!!.worldRotation = upQuat
+                            }
+                        }
+                        .exceptionally { throwable ->
+                            Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
+                            null
+                        }
+                objChild!!.setParent(objParent)
+                objChild!!.setOnTouchListener { hitTestResult, motionEvent ->
+                    objParent!!.select()
+                }
+            }
+        }
+    }
 
 
     private fun initView() {
