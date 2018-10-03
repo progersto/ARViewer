@@ -339,7 +339,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_AR_ACTIVITY && resultCode == Activity.RESULT_OK){
-            Toast.makeText(this, getString(R.string.for_continue_install_ARCore), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.for_continue_install_ARCore), Toast.LENGTH_LONG).show()
         }
     }
 }

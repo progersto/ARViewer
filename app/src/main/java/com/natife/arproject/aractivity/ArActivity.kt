@@ -10,6 +10,7 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.*
 import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat.startActivity
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -28,7 +29,10 @@ import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.*
+import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
+import com.natife.arproject.R.drawable.andy
+import com.natife.arproject.R.id.*
 import com.natife.arproject.utils.*
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
@@ -49,11 +53,13 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var dialog: AlertDialog? = null
     private var view2d: View? = null
     private lateinit var image: ImageView
+    private lateinit var listNode: ArrayList<ObjectForList>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         mPresenter = ArActivityPresenter(this)
+        listNode = mPresenter.getListNode()
 
         // Enable AR related functionality on ARCore supported devices only.
         checkArCoreApkAvailability()
@@ -67,14 +73,29 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         if (resImage != 0) {
             create2DObj(resImage) //load 2D object
         } else {
-          create3DObj(name)  //load 3D object
+            if (listNode.size > 0) {
+                setListObject()
+            } else {
+                create3DObj(name)  //load 3D object
+            }
         }//if
         arSceneView.scene.addOnUpdateListener(this) //You can do this anywhere. I do it on activity creation post inflating the fragment
         initView()
     }//onCreate
 
 
-    private fun create3DObj(name: String){
+    private fun setListObject() {
+
+        val anchor = listNode[0].anchorNode
+        var pos = anchor!!.pose
+        val anchorNode = AnchorNode(anchor)
+        val objChild1 = TransformableNode((listNode[0].arFragment)!!.transformationSystem)
+        objChild1.renderable = listNode[0].renderable
+        objChild1.setParent(anchorNode)
+    }
+
+
+    private fun create3DObj(name: String) {
         //create object
         ModelRenderable.builder()
                 .setSource(this, Uri.parse(name))
@@ -85,7 +106,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                     null
                 }
 
-        //слушатель нажатия на плоскость (точки)
+
         arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
             if (andyRenderable == null) {
                 return@setOnTapArPlaneListener
@@ -101,74 +122,79 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
             // Create the transformable object and add it to the anchor.
             objChild = TransformableNode(arFragment.transformationSystem)
-            objChild!!.setParent(anchorNode)
-            objChild!!.renderable = andyRenderable
-            objChild!!.select()
+            objChild?.setParent(anchorNode)
+            objChild?.renderable = andyRenderable
+            objChild?.name = name
+            objChild?.select()
+            objChild?.setOnTapListener { hitTestResult, motionEvent ->
+                Log.d("sss", "setOnTapListener")
+            }
+            listNode.add(ObjectForList(anchor, andyRenderable!!, arFragment))
         }//OnTapArPlaneListener
-    }
+    }//create3DObj
 
 
-    private fun create2DObj(resImage: Int){
+    private fun create2DObj(resImage: Int) {
         view2d = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
         image = view2d!!.findViewById(R.id.image)
         Picasso.get().load(resImage).into(image)
 
         arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
-            if (objParent == null) {
+            //            if (objParent == null) {  //create only one object
 
-                // Create the Anchor Parent
-                val anchorParent = hitResult.createAnchor()
-                val anchorNodeParent = AnchorNode(anchorParent)
-                anchorNodeParent.setParent(arSceneView.scene)
+            // Create the Anchor Parent
+            val anchorParent = hitResult.createAnchor()
+            val anchorNodeParent = AnchorNode(anchorParent)
+            anchorNodeParent.setParent(arSceneView.scene)
 
-                //create empty obj for parent
-                objParent = TransformableNode(arFragment.transformationSystem)
-                objParent!!.setParent(anchorNodeParent)
+            //create empty obj for parent
+            objParent = TransformableNode(arFragment.transformationSystem)
+            objParent?.setParent(anchorNodeParent)
+            objParent?.select()
+
+            // Create the Anchor Child
+            val anchorChild = hitResult.createAnchor()
+            val anchorNodeChild = AnchorNode(anchorChild)
+            anchorNodeChild.setParent(arSceneView.scene)
+
+            objChild = TransformableNode(arFragment.transformationSystem)
+            objChild?.rotationController?.rotationRateDegrees = 0f//запрет вращения
+
+            //create object from View
+            ViewRenderable.builder()
+                    .setView(this, view2d)
+                    .build()
+                    .thenAccept { renderable ->
+                        objChild!!.renderable = renderable
+                        // Change the rotation
+                        if (plane.type == Plane.Type.VERTICAL) {
+                            val yAxis = plane.centerPose.yAxis
+                            val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                            objChild?.worldRotation = upQuat
+                        } else if (plane.type == Plane.Type.HORIZONTAL_DOWNWARD_FACING) {
+                            val yAxis = plane.centerPose.yAxis
+                            val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                            objChild?.worldRotation = upQuat
+                        } else if (plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING) {
+                            val yAxis = plane.centerPose.yAxis
+                            val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
+                            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+                            objChild?.worldRotation = upQuat
+                        }
+                    }
+                    .exceptionally { throwable ->
+                        Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
+                        null
+                    }
+            objChild?.setParent(objParent)
+            objChild?.setOnTouchListener { hitTestResult, motionEvent ->
                 objParent!!.select()
-
-                // Create the Anchor Child
-                val anchorChild = hitResult.createAnchor()
-                val anchorNodeChild = AnchorNode(anchorChild)
-                anchorNodeChild.setParent(arSceneView.scene)
-
-                objChild = TransformableNode(arFragment.transformationSystem)
-                objChild!!.rotationController.rotationRateDegrees = 0f//запрет вращения
-
-                //create object from View
-                ViewRenderable.builder()
-                        .setView(this, view2d)
-                        .build()
-                        .thenAccept { renderable ->
-                            objChild!!.renderable = renderable
-                            // Change the rotation
-                            if (plane.type == Plane.Type.VERTICAL) {
-                                val yAxis = plane.centerPose.yAxis
-                                val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
-                                val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-                                objChild!!.worldRotation = upQuat
-                            } else if (plane.type == Plane.Type.HORIZONTAL_DOWNWARD_FACING) {
-                                val yAxis = plane.centerPose.yAxis
-                                val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
-                                val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-                                objChild!!.worldRotation = upQuat
-                            } else if (plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING) {
-                                val yAxis = plane.centerPose.yAxis
-                                val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
-                                val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-                                objChild!!.worldRotation = upQuat
-                            }
-                        }
-                        .exceptionally { throwable ->
-                            Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                            null
-                        }
-                objChild!!.setParent(objParent)
-                objChild!!.setOnTouchListener { hitTestResult, motionEvent ->
-                    objParent!!.select()
-                }
             }
+//            }
         }
-    }
+    }//create2DObj
 
 
     private fun initView() {
@@ -197,7 +223,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             }
             askForPermission()
         }
-    }
+    }//initView
 
 
     private fun createDialog() {
@@ -206,7 +232,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 .show()
         dialog?.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog?.setContentView(R.layout.dialog_create_screen)
-    }
+    }//createDialog
 
 
     private fun getFile(flag: Boolean, callback: (file: File) -> Unit) {
@@ -233,7 +259,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 }
             }, Handler(handlerThread.looper))
         }
-    }
+    }//getFile
 
 
     override fun onResume() {
@@ -242,7 +268,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         // Make sure ARCore is installed and up to date.
         try {
             if (mSession == null) {
-
                 when (ArCoreApk.getInstance().requestInstall(this, mUserRequestedInstall)) {
                     ArCoreApk.InstallStatus.INSTALLED ->
                         // Success, create the AR session.
@@ -259,6 +284,8 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         Log.d("", "Null in enum argument")
                     }
                 }
+            }else{
+                mSession!!.resume()
             }
         } catch (e: UnavailableUserDeclinedInstallationException) {
             setResult(Activity.RESULT_OK, intent)
@@ -415,5 +442,10 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 return
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mSession!!.pause()
     }
 }

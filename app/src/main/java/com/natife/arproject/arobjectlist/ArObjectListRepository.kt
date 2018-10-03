@@ -2,6 +2,8 @@ package com.natife.arproject.arobjectlist
 
 import android.arch.lifecycle.MutableLiveData
 import android.widget.TextView
+import com.google.ar.sceneform.ux.TransformableNode
+import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
 
@@ -10,6 +12,7 @@ class ArObjectListRepository : ArObjectListContract.Repository {
 
     private lateinit var listGeneral: MutableList<Model>
     private val modelLiveData = MutableLiveData<Model>()
+    private var listNode: java.util.ArrayList<ObjectForList> = java.util.ArrayList()
 
     companion object {
 
@@ -65,6 +68,10 @@ class ArObjectListRepository : ArObjectListContract.Repository {
 
     override fun moveModel(model: Model) {
         modelLiveData.value = model
+    }
+
+    override fun getListNodeFromRepo(): ArrayList<ObjectForList> {
+        return listNode
     }
 
 }

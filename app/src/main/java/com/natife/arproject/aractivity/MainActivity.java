@@ -105,6 +105,18 @@ public class MainActivity extends AppCompatActivity implements Scene.OnUpdateLis
                     andy.setParent(anchorNode);
                     andy.setRenderable(andyRenderable);
                     andy.select();
+                    andy.setOnTouchListener(new Node.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
+                            return false;
+                        }
+                    });
+                    andy.setOnTapListener(new Node.OnTapListener() {
+                        @Override
+                        public void onTap(HitTestResult hitTestResult, MotionEvent motionEvent) {
+
+                        }
+                    });
                 });
 
 

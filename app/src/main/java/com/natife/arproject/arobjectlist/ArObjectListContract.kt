@@ -1,6 +1,8 @@
 package com.natife.arproject.arobjectlist
 
 import android.arch.lifecycle.MutableLiveData
+import com.google.ar.sceneform.ux.TransformableNode
+import com.natife.arproject.ObjectForList
 import com.natife.arproject.data.entityRoom.Model
 
 interface ArObjectListContract {
@@ -25,5 +27,6 @@ interface ArObjectListContract {
         fun getGeneralList(): MutableList<Model>
         fun getLifeDataModel(): MutableLiveData<Model>
         fun moveModel(model: Model)
+        fun getListNodeFromRepo(): ArrayList<ObjectForList>
     }
 }

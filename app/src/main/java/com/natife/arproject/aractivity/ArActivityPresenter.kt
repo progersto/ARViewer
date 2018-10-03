@@ -8,7 +8,11 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.os.Environment
 import android.view.View
+import com.google.ar.sceneform.ux.TransformableNode
+import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
+import com.natife.arproject.arobjectlist.ArObjectListContract
+import com.natife.arproject.arobjectlist.ArObjectListRepository
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -16,6 +20,14 @@ import java.util.*
 
 
 class ArActivityPresenter(private val mView: ArActivityContract.View):ArActivityContract.Presenter {
+
+    private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
+
+
+    override fun getListNode(): ArrayList<ObjectForList> {
+        return mRepository.getListNodeFromRepo()
+    }
+
 
     @SuppressLint("SimpleDateFormat")
     override fun createFileForIntent(flag: Boolean, bitmap: Bitmap, context: Context): File {

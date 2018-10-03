@@ -27,7 +27,8 @@
             android:name="com.google.ar.core"
             android:value="required" />
 
-        <activity android:name=".aractivity.ArActivity"/>
+        <activity android:name=".aractivity.ArActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>
