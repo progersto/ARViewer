@@ -17,11 +17,11 @@ class MultiViewTypeAdapter(
         private val imageListener: OnItemImageListener,
         private val move: Boolean,
         private val idMovable: Int)
-    : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    : RecyclerView.Adapter<MultiViewTypeAdapter.AbsViewHolder>() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MultiViewTypeAdapter.AbsViewHolder {
         val view: View
-        lateinit var recHolder: RecyclerView.ViewHolder
+        lateinit var recHolder: MultiViewTypeAdapter.AbsViewHolder
 
         when (viewType) {
             Model.TEXT_TYPE -> {
@@ -40,93 +40,95 @@ class MultiViewTypeAdapter(
         return recHolder
     }
 
+    inner class TextTypeViewHolder(itemView: View) : AbsViewHolder(itemView) {
 
-    class TextTypeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        internal var txtType: TextView = itemView.findViewById(R.id.nameDirectory)
+        private var txtType: TextView = itemView.findViewById(R.id.nameDirectory)
+
+        override fun onBindViewHolder(model: Model) {
+            txtType.text = model.name
+        }
     }
 
+    inner class FolderTypeViewHolder(itemView: View) : AbsViewHolder(itemView) {
 
-    class FolderTypeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         internal var nameFolder: TextView = itemView.findViewById(R.id.nameFolder)
         internal var menuFolderItem: RelativeLayout = itemView.findViewById(R.id.menuFolderItem)
         internal var folderCardView: CardView = itemView.findViewById(R.id.folderCardView)
         internal var backgroundMoveFolder: RelativeLayout = itemView.findViewById(R.id.backgroundMoveFolder)
+
+        override fun onBindViewHolder(model: Model) {
+            nameFolder.text = model.name
+            if (move) {
+                menuFolderItem.visibility = View.GONE
+                if (model.id != idMovable) {
+                    folderCardView.setOnClickListener {
+                        imageListener.onItemFolderClick(adapterPosition)
+                    }
+                    backgroundMoveFolder.visibility = View.GONE
+                } else {
+                    backgroundMoveFolder.visibility = View.VISIBLE
+                }
+            } else {
+                menuFolderItem.visibility = View.VISIBLE
+                menuFolderItem.setOnClickListener {
+                    imageListener.onItemMenuClick(adapterPosition)
+                }
+                folderCardView.setOnClickListener {
+                    imageListener.onItemFolderClick(adapterPosition)
+                }
+            }
+        }
     }
 
 
-    class ImageTypeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class ImageTypeViewHolder(itemView: View) : AbsViewHolder(itemView) {
+
         internal var itemArImage: ImageView = itemView.findViewById(R.id.itemArImage)
         internal var nameItemImage: TextView = itemView.findViewById(R.id.nameItemImage)
         internal var menuImageItem: RelativeLayout = itemView.findViewById(R.id.menuImageItem)
         internal var backgroundMove: RelativeLayout = itemView.findViewById(R.id.backgroundMove)
+
+        override fun onBindViewHolder(model: Model) {
+            nameItemImage.text = model.name
+            Picasso.get().load(model.image ?: 0).fit().into(itemArImage)
+
+            if (move) {
+                menuImageItem.visibility = View.GONE
+                backgroundMove.visibility = View.VISIBLE
+            } else {
+                menuImageItem.setOnClickListener {
+                    imageListener.onItemMenuClick(adapterPosition)
+                }
+                itemArImage.setOnClickListener {
+                    imageListener.onItemObjClick(adapterPosition)
+                }
+                itemArImage.setOnLongClickListener {
+                    imageListener.onItemObjLongClick(adapterPosition, model.image!!)
+                    return@setOnLongClickListener true
+                }
+
+
+                menuImageItem.visibility = View.VISIBLE
+                backgroundMove.visibility = View.GONE
+            }
+        }
     }
 
+    abstract inner class AbsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        abstract fun onBindViewHolder(model: Model)
+    }
 
     override fun getItemViewType(position: Int): Int {
-        when (list[position].type) {
-            0 -> return Model.TEXT_TYPE
-            1 -> return Model.FOLDER_TYPE
-            2 -> return Model.IMAGE_TYPE
-            else -> return -1
+        return when (list[position].type) {
+            0 -> Model.TEXT_TYPE
+            1 -> Model.FOLDER_TYPE
+            2 -> Model.IMAGE_TYPE
+            else -> -1
         }
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, listPosition: Int) {
-        when (list[listPosition].type) {
-            Model.TEXT_TYPE ->
-                (holder as TextTypeViewHolder).txtType.text = list[listPosition].name
-
-            Model.FOLDER_TYPE -> {
-                (holder as FolderTypeViewHolder).nameFolder.text = list[listPosition].name
-                if (move){
-                    holder.menuFolderItem.visibility = View.GONE
-                    if (list[listPosition].id != idMovable){
-                        holder.folderCardView.setOnClickListener {
-                            imageListener.onItemFolderClick(holder.adapterPosition)
-                        }
-                        holder.backgroundMoveFolder.visibility = View.GONE
-                    }else{
-                        holder.backgroundMoveFolder.visibility = View.VISIBLE
-                    }
-                }else{
-                    holder.menuFolderItem.visibility = View.VISIBLE
-                    holder.menuFolderItem.setOnClickListener {
-                        imageListener.onItemMenuClick(holder.adapterPosition)
-                    }
-                    holder.folderCardView.setOnClickListener {
-                        imageListener.onItemFolderClick(holder.adapterPosition)
-                    }
-                }
-            }
-
-            Model.IMAGE_TYPE -> {
-                var name = list[listPosition].name
-//                name = name.substring(0, 1).toUpperCase() + name.substring(1);
-                (holder as ImageTypeViewHolder).nameItemImage.text = name
-                list[listPosition].image?.let {
-                    Picasso.get().load(it).into(holder.itemArImage)
-                }
-
-                if (move){
-                    holder.menuImageItem.visibility = View.GONE
-                    holder.backgroundMove.visibility = View.VISIBLE
-                }else{
-                    holder.menuImageItem.setOnClickListener {
-                        imageListener.onItemMenuClick(holder.adapterPosition)
-                    }
-                    holder.itemArImage.setOnClickListener {
-                        imageListener.onItemObjClick(holder.adapterPosition)
-                    }
-                    holder.itemArImage.setOnLongClickListener {
-                        imageListener.onItemObjLongClick(holder.adapterPosition, list[listPosition].image!!)
-                        true}
-
-
-                    holder.menuImageItem.visibility = View.VISIBLE
-                    holder.backgroundMove.visibility = View.GONE
-                }
-            }
-        }
+    override fun onBindViewHolder(holder: MultiViewTypeAdapter.AbsViewHolder, listPosition: Int) {
+        holder.onBindViewHolder(list[listPosition])
     }
 
     override fun getItemCount(): Int {

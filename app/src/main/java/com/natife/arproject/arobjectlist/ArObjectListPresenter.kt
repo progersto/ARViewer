@@ -8,9 +8,11 @@ import com.natife.arproject.data.entityRoom.ModelDao
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
-class ArObjectListPresenter(private val mView: ArObjectListContract.View, private val modelDao: ModelDao) : ArObjectListContract.Presenter {
-    private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
+class ArObjectListPresenter(
+        private val mView: ArObjectListContract.View,
+        private val modelDao: ModelDao) : ArObjectListContract.Presenter {
 
+    private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
     override fun insertModel(name: String, firstInit: Boolean, parentFolderId: Int?) {
         doAsync {
@@ -27,7 +29,6 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
         }
     }
 
-
     override fun getTitleFromDialog(model: Model): Int {
         var message: Int = -1
         when (model.type) {
@@ -36,7 +37,6 @@ class ArObjectListPresenter(private val mView: ArObjectListContract.View, privat
         }
         return message
     }
-
 
     override fun getGeneralList(parentFolderId: Int?) {
         doAsync {

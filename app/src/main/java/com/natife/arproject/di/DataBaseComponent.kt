@@ -5,7 +5,7 @@ import dagger.Component
 import javax.inject.Singleton
 
 @Singleton
-@Component(modules = arrayOf(DatabaseModule::class))
+@Component(modules = [DatabaseModule::class])
 interface DataBaseComponent {
 
     fun inject(arObjectListActivity: ArObjectListActivity)

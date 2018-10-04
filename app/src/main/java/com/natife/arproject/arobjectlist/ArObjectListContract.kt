@@ -22,11 +22,11 @@ interface ArObjectListContract {
     }
 
     interface Repository {
-        fun initList(): ArrayList<Model>
+        fun initList(): MutableList<Model>
         fun createGeneralList(listImage: List<Model>, listFolder: List<Model>): MutableList<Model>
         fun getGeneralList(): MutableList<Model>
         fun getLifeDataModel(): MutableLiveData<Model>
         fun moveModel(model: Model)
-        fun getListNodeFromRepo(): ArrayList<ObjectForList>
+        fun getListNodeFromRepo(): MutableList<ObjectForList>
     }
 }
