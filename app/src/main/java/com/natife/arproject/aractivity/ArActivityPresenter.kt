@@ -24,7 +24,7 @@ class ArActivityPresenter(private val mView: ArActivityContract.View):ArActivity
     private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
 
-    override fun getListNode(): ArrayList<ObjectForList> {
+    override fun getListNode(): MutableList<ObjectForList> {
         return mRepository.getListNodeFromRepo()
     }
 

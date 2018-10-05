@@ -3,6 +3,7 @@
     package="com.natife.arproject">
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -26,6 +27,10 @@
         <meta-data
             android:name="com.google.ar.core"
             android:value="required" />
+
+        <meta-data
+            android:name="com.google.android.ar.API_KEY"
+            android:value="AIzaSyAZnZNNTAVn5ej5TXmGjrwaextVHgD9fCw"/>
 
         <activity android:name=".aractivity.ArActivity"
             android:screenOrientation="portrait"/>

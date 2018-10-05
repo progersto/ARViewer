@@ -10,7 +10,6 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.*
 import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat.startActivity
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -31,8 +30,6 @@ import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.*
 import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
-import com.natife.arproject.R.drawable.andy
-import com.natife.arproject.R.id.*
 import com.natife.arproject.utils.*
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
@@ -40,9 +37,9 @@ import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import java.io.File
 
-class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContract.View {
+class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContract.View, OnFragmentReady {
     private lateinit var mPresenter: ArActivityContract.Presenter
-    private lateinit var arFragment: ArFragment
+    //    private lateinit var arFragment: ArFragment
     private lateinit var arSceneView: ArSceneView
     private var andyRenderable: ModelRenderable? = null
     private var objChild: TransformableNode? = null
@@ -53,7 +50,31 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var dialog: AlertDialog? = null
     private var view2d: View? = null
     private lateinit var image: ImageView
-    private lateinit var listNode: ArrayList<ObjectForList>
+    private lateinit var listNode: MutableList<ObjectForList>
+    private var name: String = ""
+    private var flagLoadNodelist: Boolean = false
+    private var flagSession: Boolean = false
+
+
+    private lateinit var fragment: CustomArFragment
+    private var cloudAnchor: Anchor? = null
+
+    private enum class AppAnchorState {
+        NONE,
+        HOSTING,
+        HOSTED,
+        RESOLVING,
+        RESOLVED
+    }
+
+    private var appAnchorState = AppAnchorState.NONE
+
+//    private val snackbarHelper = SnackbarHelper()
+
+//    private var storageManager: StorageManager? = null
+
+    private var selectedObject: Uri? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,17 +85,19 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         // Enable AR related functionality on ARCore supported devices only.
         checkArCoreApkAvailability()
 
-        arFragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as ArFragment
-        arSceneView = arFragment.arSceneView
+//        arFragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as ArFragment
+        fragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as CustomArFragment
+        fragment.planeDiscoveryController.hide()  // Hide initial hand gesture
+        arSceneView = fragment.arSceneView
 
-        val name = intent.getStringExtra("name")
+        name = intent.getStringExtra("name")
         val resImage = intent.getIntExtra("resImage", 0)
 
         if (resImage != 0) {
             create2DObj(resImage) //load 2D object
         } else {
             if (listNode.size > 0) {
-                setListObject()
+                flagLoadNodelist = true
             } else {
                 create3DObj(name)  //load 3D object
             }
@@ -84,14 +107,38 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     }//onCreate
 
 
-    private fun setListObject() {
+    override fun fragmentReady() {
+        flagSession = true
+    }
 
-        val anchor = listNode[0].anchorNode
-        var pos = anchor!!.pose
-        val anchorNode = AnchorNode(anchor)
-        val objChild1 = TransformableNode((listNode[0].arFragment)!!.transformationSystem)
-        objChild1.renderable = listNode[0].renderable
-        objChild1.setParent(anchorNode)
+    private fun createOldObj() {
+        if (flagLoadNodelist) {
+            val cloudAnchorId = listNode[0].cloudAnchorId
+
+            var ses = fragment.arSceneView.session
+            val resolvedAnchor = ses.resolveCloudAnchor(cloudAnchorId)
+            Log.d("sss", "resolvedAnchor = " + resolvedAnchor.toString())
+            setCloudAnchor(resolvedAnchor)
+            appAnchorState = AppAnchorState.RESOLVING
+
+            ModelRenderable.builder()
+                    .setSource(this, Uri.parse(listNode[0].name))
+                    .build()
+                    .thenAccept { renderable ->
+                        val anchorNode = AnchorNode(cloudAnchor)
+                        andyRenderable = renderable
+                        val objChild1 = TransformableNode(fragment.transformationSystem)
+                        objChild1.renderable = andyRenderable
+                        objChild1.setParent(anchorNode)
+                        fragment.arSceneView.scene.addChild(anchorNode)
+                        objChild1.select()
+                    }
+                    .exceptionally { throwable ->
+                        Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
+                        null
+                    }
+            flagLoadNodelist = false
+        }
     }
 
 
@@ -107,7 +154,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 }
 
 
-        arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
+        fragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
             if (andyRenderable == null) {
                 return@setOnTapArPlaneListener
             }
@@ -115,13 +162,25 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 changeHelpScreen()
             }
 
-            // Create the Anchor.
-            val anchor = hitResult.createAnchor()
-            val anchorNode = AnchorNode(anchor)
+
+            if (plane.type != Plane.Type.HORIZONTAL_UPWARD_FACING || appAnchorState != AppAnchorState.NONE) {
+                return@setOnTapArPlaneListener
+            }
+            val anchor2 = hitResult.createAnchor()
+            val newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchor2)
+
+            setCloudAnchor(newAnchor)
+
+            appAnchorState = AppAnchorState.HOSTING
+//
+//            placeObject(fragment, cloudAnchor, selectedObject)
+
+
+            val anchorNode = AnchorNode(cloudAnchor)
             anchorNode.setParent(arSceneView.scene)
 
             // Create the transformable object and add it to the anchor.
-            objChild = TransformableNode(arFragment.transformationSystem)
+            objChild = TransformableNode(fragment.transformationSystem)
             objChild?.setParent(anchorNode)
             objChild?.renderable = andyRenderable
             objChild?.name = name
@@ -129,7 +188,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             objChild?.setOnTapListener { hitTestResult, motionEvent ->
                 Log.d("sss", "setOnTapListener")
             }
-            listNode.add(ObjectForList(anchor, andyRenderable!!, arFragment))
         }//OnTapArPlaneListener
     }//create3DObj
 
@@ -139,7 +197,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         image = view2d!!.findViewById(R.id.image)
         Picasso.get().load(resImage).into(image)
 
-        arFragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
+        fragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
             //            if (objParent == null) {  //create only one object
 
             // Create the Anchor Parent
@@ -148,7 +206,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             anchorNodeParent.setParent(arSceneView.scene)
 
             //create empty obj for parent
-            objParent = TransformableNode(arFragment.transformationSystem)
+            objParent = TransformableNode(fragment.transformationSystem)
             objParent?.setParent(anchorNodeParent)
             objParent?.select()
 
@@ -157,7 +215,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             val anchorNodeChild = AnchorNode(anchorChild)
             anchorNodeChild.setParent(arSceneView.scene)
 
-            objChild = TransformableNode(arFragment.transformationSystem)
+            objChild = TransformableNode(fragment.transformationSystem)
             objChild?.rotationController?.rotationRateDegrees = 0f//запрет вращения
 
             //create object from View
@@ -284,7 +342,11 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         Log.d("", "Null in enum argument")
                     }
                 }
-            }else{
+                // Create default config and check if supported.
+                val config = Config(mSession)
+                config.cloudAnchorMode = Config.CloudAnchorMode.ENABLED
+                mSession!!.configure(config)
+            } else {
                 mSession!!.resume()
             }
         } catch (e: UnavailableUserDeclinedInstallationException) {
@@ -313,6 +375,13 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         //get the frame from the scene for shorthand
         val frame = arSceneView.arFrame
         if (frame != null) {
+            checkUpdatedAnchor()
+
+            var cameraTrackingState = fragment.arSceneView.arFrame.camera.trackingState
+            if (cameraTrackingState == TrackingState.TRACKING && flagSession) {
+                flagSession = false
+                createOldObj()
+            }
 
             if (!isFistInitAR(this)) {
 
@@ -354,6 +423,56 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 }
             }
         }
+    }
+
+    // private synchronized void checkUpdatedAnchor() {
+    private fun checkUpdatedAnchor() {
+        if (appAnchorState != AppAnchorState.HOSTING && appAnchorState != AppAnchorState.RESOLVING) {
+            return
+        }
+        if (cloudAnchor != null) {
+            val cloudState = cloudAnchor!!.cloudAnchorState
+
+            if (appAnchorState == AppAnchorState.HOSTING) {
+
+                if (cloudState.isError) {
+//                snackbarHelper.showMessageWithDismiss(this, "Error hosting anchor: $cloudState")
+                    appAnchorState = AppAnchorState.NONE
+                } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
+                    val cloudAnchorId = cloudAnchor?.cloudAnchorId
+                    listNode.add(ObjectForList(cloudAnchorId, name))
+//                storageManager.nextShortCode({ shortCode ->
+//                    if (shortCode == null) {
+//                        snackbarHelper.showMessageWithDismiss(this, "Couldn't get shortcode.")
+//                        return@storageManager.nextShortCode
+//                    }
+//                    storageManager.storeUsingShortCode(shortCode, cloudAnchor.getCloudAnchorId())
+//
+//                    snackbarHelper.showMessageWithDismiss(this, "Anchor hosted! Cloud Short Code: " + shortCode!!)
+//                })
+                    Toast.makeText(this, "Объект сохранен", Toast.LENGTH_SHORT).show()
+                    appAnchorState = AppAnchorState.HOSTED
+                }
+            } else if (appAnchorState == AppAnchorState.RESOLVING) {
+                if (cloudState.isError) {
+                    appAnchorState = AppAnchorState.NONE
+                } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
+                    Toast.makeText(this, "Объект восстановлен", Toast.LENGTH_SHORT).show()
+                    appAnchorState = AppAnchorState.RESOLVED
+                }
+            }
+        }
+    }
+
+
+    private fun setCloudAnchor(newAnchor: Anchor?) {
+        if (cloudAnchor != null) {
+            cloudAnchor!!.detach()
+        }
+
+        cloudAnchor = newAnchor
+        appAnchorState = AppAnchorState.NONE
+//        snackbarHelper.hide(this)
     }
 
     private fun changeHelpScreen() {
