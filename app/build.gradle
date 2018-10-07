@@ -50,7 +50,7 @@ dependencies {
     kapt "android.arch.persistence.room:compiler:1.1.1"
 
     //anko
-    implementation "org.jetbrains.anko:anko:0.10.4"
+    implementation "org.jetbrains.anko:anko:0.10.5"
 
     // dagger 2
     kapt 'com.google.dagger:dagger-compiler:2.16'

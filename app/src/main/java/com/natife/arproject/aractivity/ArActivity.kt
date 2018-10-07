@@ -34,6 +34,7 @@ import com.natife.arproject.utils.*
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.toast
 import org.jetbrains.anko.uiThread
 import java.io.File
 
@@ -41,7 +42,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private lateinit var mPresenter: ArActivityContract.Presenter
     //    private lateinit var arFragment: ArFragment
     private lateinit var arSceneView: ArSceneView
-    private var andyRenderable: ModelRenderable? = null
     private var objChild: TransformableNode? = null
     private var objParent: TransformableNode? = null
     private var helpStep: Int = 0
@@ -54,10 +54,12 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var name: String = ""
     private var flagLoadNodelist: Boolean = false
     private var flagSession: Boolean = false
-
-
+    private var countObjList: Int = 0
     private lateinit var fragment: CustomArFragment
     private var cloudAnchor: Anchor? = null
+    private var appAnchorState = AppAnchorState.NONE
+    //    private val snackbarHelper = SnackbarHelper()
+    //    private var storageManager: StorageManager? = null
 
     private enum class AppAnchorState {
         NONE,
@@ -66,14 +68,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         RESOLVING,
         RESOLVED
     }
-
-    private var appAnchorState = AppAnchorState.NONE
-
-//    private val snackbarHelper = SnackbarHelper()
-
-//    private var storageManager: StorageManager? = null
-
-    private var selectedObject: Uri? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,37 +92,68 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         } else {
             if (listNode.size > 0) {
                 flagLoadNodelist = true
-            } else {
-                create3DObj(name)  //load 3D object
             }
+            create3DObj(name)  //load 3D object
         }//if
         arSceneView.scene.addOnUpdateListener(this) //You can do this anywhere. I do it on activity creation post inflating the fragment
         initView()
     }//onCreate
 
 
-    override fun fragmentReady() {
-        flagSession = true
+    private fun checkUpdatedAnchor() {
+        if (appAnchorState != AppAnchorState.HOSTING && appAnchorState != AppAnchorState.RESOLVING) {
+            return
+        }
+        if (cloudAnchor != null) {
+            val cloudState = cloudAnchor!!.cloudAnchorState
+
+
+            if (appAnchorState == AppAnchorState.HOSTING) {
+                if (cloudState.isError) {
+                    toast("Ошибка сохранения. Подойдите ближе к объекту и наведите на него камеру")
+                    appAnchorState = AppAnchorState.NONE
+                } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
+                    val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
+                    listNode.add(ObjectForList(cloudAnchorId, name))//save anchor
+                    toast("Объект сохранен")
+                    appAnchorState = AppAnchorState.NONE
+                }
+            } else if (appAnchorState == AppAnchorState.RESOLVING) {
+                if (cloudState.isError) {
+                    toast("Подойдите ближе к точке восстановления объекта и наведите на нее камеру")
+                    appAnchorState = AppAnchorState.NONE
+
+                } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
+                    toast("Объект ${listNode[countObjList].name} восстановлен")
+                    appAnchorState = AppAnchorState.NONE
+                    countObjList++
+                    if (listNode.size > countObjList) {
+                        createOldObj()
+                    }else{
+                        flagLoadNodelist = false
+                    }
+                }
+            }
+        }
     }
+
 
     private fun createOldObj() {
         if (flagLoadNodelist) {
-            val cloudAnchorId = listNode[0].cloudAnchorId
-
-            var ses = fragment.arSceneView.session
-            val resolvedAnchor = ses.resolveCloudAnchor(cloudAnchorId)
+            val cloudAnchorId = listNode[countObjList].cloudAnchorId
+            val resolvedAnchor = arSceneView.session.resolveCloudAnchor(cloudAnchorId)
             Log.d("sss", "resolvedAnchor = " + resolvedAnchor.toString())
-            setCloudAnchor(resolvedAnchor)
+            setCloudAnchor(resolvedAnchor)//set cloudAnchor for RESOLVING
             appAnchorState = AppAnchorState.RESOLVING
 
             ModelRenderable.builder()
-                    .setSource(this, Uri.parse(listNode[0].name))
+                    .setSource(this, Uri.parse(listNode[countObjList].name))
                     .build()
                     .thenAccept { renderable ->
-                        val anchorNode = AnchorNode(cloudAnchor)
-                        andyRenderable = renderable
+                        //                            val anchorNode = AnchorNode(cloudAnchor)
+                        val anchorNode = AnchorNode(resolvedAnchor)//set anchor from list
                         val objChild1 = TransformableNode(fragment.transformationSystem)
-                        objChild1.renderable = andyRenderable
+                        objChild1.renderable = renderable
                         objChild1.setParent(anchorNode)
                         fragment.arSceneView.scene.addChild(anchorNode)
                         objChild1.select()
@@ -137,57 +162,45 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
                         null
                     }
-            flagLoadNodelist = false
         }
     }
 
 
     private fun create3DObj(name: String) {
-        //create object
-        ModelRenderable.builder()
-                .setSource(this, Uri.parse(name))
-                .build()
-                .thenAccept { renderable -> andyRenderable = renderable }
-                .exceptionally { throwable ->
-                    Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                    null
-                }
-
-
         fragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
-            if (andyRenderable == null) {
-                return@setOnTapArPlaneListener
-            }
             if (!isFistInitAR(this)) {
                 changeHelpScreen()
             }
-
 
             if (plane.type != Plane.Type.HORIZONTAL_UPWARD_FACING || appAnchorState != AppAnchorState.NONE) {
                 return@setOnTapArPlaneListener
             }
             val anchor2 = hitResult.createAnchor()
             val newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchor2)
-
-            setCloudAnchor(newAnchor)
-
+            setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
             appAnchorState = AppAnchorState.HOSTING
-//
-//            placeObject(fragment, cloudAnchor, selectedObject)
-
-
-            val anchorNode = AnchorNode(cloudAnchor)
+            val anchorNode = AnchorNode(newAnchor)
             anchorNode.setParent(arSceneView.scene)
 
-            // Create the transformable object and add it to the anchor.
-            objChild = TransformableNode(fragment.transformationSystem)
-            objChild?.setParent(anchorNode)
-            objChild?.renderable = andyRenderable
-            objChild?.name = name
-            objChild?.select()
-            objChild?.setOnTapListener { hitTestResult, motionEvent ->
-                Log.d("sss", "setOnTapListener")
-            }
+            //create object
+            ModelRenderable.builder()
+                    .setSource(this, Uri.parse(name))
+                    .build()
+                    .thenAccept { renderable ->
+                        // Create the transformable object and add it to the anchor.
+                        objChild = TransformableNode(fragment.transformationSystem)
+                        objChild?.setParent(anchorNode)
+                        objChild?.renderable = renderable
+                        objChild?.name = name
+                        objChild?.select()
+                        objChild?.setOnTapListener { hitTestResult, motionEvent ->
+                            Log.d("sss", "setOnTapListener")
+                        }
+                    }
+                    .exceptionally { throwable ->
+                        Toast.makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
+                        null
+                    }
         }//OnTapArPlaneListener
     }//create3DObj
 
@@ -256,6 +269,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
 
     private fun initView() {
+        share1.setOnClickListener {
+           setCloudAnchor(null)
+        }
         skipHelpIcon.setOnClickListener {
             finishStepHelp()
         }
@@ -306,10 +322,8 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 if (!this@ArActivity.isDestroyed) {
 
                     val finishBitmap = mPresenter.overlay(firstBitmap, secondBitmap)
-                    Log.d("sss", "105")
                     doAsync {
                         val file = mPresenter.createFileForIntent(flag, finishBitmap, this@ArActivity)
-                        Log.d("sss", "107")
                         uiThread {
                             callback(file)
                         }
@@ -362,7 +376,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private fun checkArCoreApkAvailability() {
         val availability = ArCoreApk.getInstance().checkAvailability(this)
         if (availability.isTransient) {
-            // Re-query at 5Hz while compatibility is checked in the background.
             Handler().postDelayed({ checkArCoreApkAvailability() }, 200)
         }
         if (!availability.isSupported) {
@@ -377,7 +390,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         if (frame != null) {
             checkUpdatedAnchor()
 
-            var cameraTrackingState = fragment.arSceneView.arFrame.camera.trackingState
+            val cameraTrackingState = fragment.arSceneView.arFrame.camera.trackingState
             if (cameraTrackingState == TrackingState.TRACKING && flagSession) {
                 flagSession = false
                 createOldObj()
@@ -425,50 +438,11 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         }
     }
 
-    // private synchronized void checkUpdatedAnchor() {
-    private fun checkUpdatedAnchor() {
-        if (appAnchorState != AppAnchorState.HOSTING && appAnchorState != AppAnchorState.RESOLVING) {
-            return
-        }
-        if (cloudAnchor != null) {
-            val cloudState = cloudAnchor!!.cloudAnchorState
-
-            if (appAnchorState == AppAnchorState.HOSTING) {
-
-                if (cloudState.isError) {
-//                snackbarHelper.showMessageWithDismiss(this, "Error hosting anchor: $cloudState")
-                    appAnchorState = AppAnchorState.NONE
-                } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
-                    val cloudAnchorId = cloudAnchor?.cloudAnchorId
-                    listNode.add(ObjectForList(cloudAnchorId, name))
-//                storageManager.nextShortCode({ shortCode ->
-//                    if (shortCode == null) {
-//                        snackbarHelper.showMessageWithDismiss(this, "Couldn't get shortcode.")
-//                        return@storageManager.nextShortCode
-//                    }
-//                    storageManager.storeUsingShortCode(shortCode, cloudAnchor.getCloudAnchorId())
-//
-//                    snackbarHelper.showMessageWithDismiss(this, "Anchor hosted! Cloud Short Code: " + shortCode!!)
-//                })
-                    Toast.makeText(this, "Объект сохранен", Toast.LENGTH_SHORT).show()
-                    appAnchorState = AppAnchorState.HOSTED
-                }
-            } else if (appAnchorState == AppAnchorState.RESOLVING) {
-                if (cloudState.isError) {
-                    appAnchorState = AppAnchorState.NONE
-                } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
-                    Toast.makeText(this, "Объект восстановлен", Toast.LENGTH_SHORT).show()
-                    appAnchorState = AppAnchorState.RESOLVED
-                }
-            }
-        }
-    }
-
 
     private fun setCloudAnchor(newAnchor: Anchor?) {
-        if (cloudAnchor != null) {
-            cloudAnchor!!.detach()
-        }
+//        if (cloudAnchor != null) {
+//            cloudAnchor!!.detach()
+//        }
 
         cloudAnchor = newAnchor
         appAnchorState = AppAnchorState.NONE
@@ -566,5 +540,10 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     override fun onPause() {
         super.onPause()
         mSession!!.pause()
+    }
+
+
+    override fun fragmentReady() {
+        flagSession = true
     }
 }
