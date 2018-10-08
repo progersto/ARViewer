@@ -87,6 +87,11 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         name = intent.getStringExtra("name")
         val resImage = intent.getIntExtra("resImage", 0)
 
+
+//        if (listNode.size > 0) {
+//            flagLoadNodelist = true
+//        }
+
         if (resImage != 0) {
             create2DObj(resImage) //load 2D object
         } else {
@@ -228,6 +233,26 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             val anchorNodeChild = AnchorNode(anchorChild)
             anchorNodeChild.setParent(arSceneView.scene)
 
+//            // Create the CloudAnchor Parent
+//            val anchorParent = hitResult.createAnchor()
+//            val newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchorParent)
+//            setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
+//            appAnchorState = AppAnchorState.HOSTING
+//            val anchorNodeParent = AnchorNode(newAnchor)
+//            anchorNodeParent.setParent(arSceneView.scene)
+//
+//            //create empty obj for parent
+//            objParent = TransformableNode(fragment.transformationSystem)
+//            objParent?.setParent(anchorNodeParent)
+//            objParent?.select()
+//
+//            // Create the Anchor Child
+//            val anchorNodeChild = AnchorNode(newAnchor)
+//            anchorNodeChild.setParent(arSceneView.scene)
+
+
+
+
             objChild = TransformableNode(fragment.transformationSystem)
             objChild?.rotationController?.rotationRateDegrees = 0f//запрет вращения
 
@@ -343,6 +368,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                     }
                         // Success, create the AR session.
 //                        mSession = Session(this)
+
                     ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
                         // Ensures next invocation of requestInstall() will either return
                         // INSTALLED or throw an exception.
@@ -367,8 +393,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             return
         } catch (e: Exception) {  // Current catch statements.
             Log.d("Exception", e.printStackTrace().toString())
-            setResult(Activity.RESULT_OK, intent)
-            finish()
             return  // mSession is still null.
         }
     }

@@ -166,7 +166,8 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 // 2D show
                if (searchIcon.visibility == View.GONE) hideSearch()
                 startActivityForResult<ArActivity>(REQUEST_AR_ACTIVITY,
-                        "resImage" to res)
+                        "resImage" to res,
+                        "name" to recyclerlist[position].vrImage)
             }
 
             override fun onItemFolderClick(position: Int) {
