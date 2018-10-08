@@ -30,7 +30,7 @@
 
         <meta-data
             android:name="com.google.android.ar.API_KEY"
-            android:value="AIzaSyAZnZNNTAVn5ej5TXmGjrwaextVHgD9fCw"/>
+            android:value="AIzaSyD7mK5fDNkM4jSwmbJrWOmxgYJY5TY8AxA"/>
 
         <activity android:name=".aractivity.ArActivity"
             android:screenOrientation="portrait"/>
