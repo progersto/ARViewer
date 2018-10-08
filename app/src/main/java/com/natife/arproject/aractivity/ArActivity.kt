@@ -46,7 +46,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var objParent: TransformableNode? = null
     private var helpStep: Int = 0
     private var mUserRequestedInstall = true
-    private var mSession: Session? = null
+//    private var mSession: Session? = null
     private var dialog: AlertDialog? = null
     private var view2d: View? = null
     private lateinit var image: ImageView
@@ -269,9 +269,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
 
     private fun initView() {
-        share1.setOnClickListener {
-           setCloudAnchor(null)
-        }
         skipHelpIcon.setOnClickListener {
             finishStepHelp()
         }
@@ -339,12 +336,13 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
         // Make sure ARCore is installed and up to date.
         try {
-            if (mSession == null) {
+//            if (mSession == null) {
                 when (ArCoreApk.getInstance().requestInstall(this, mUserRequestedInstall)) {
-                    ArCoreApk.InstallStatus.INSTALLED ->
+                    ArCoreApk.InstallStatus.INSTALLED ->{
+                        Log.d("", "Null in enum argument")
+                    }
                         // Success, create the AR session.
-                        mSession = Session(this)
-
+//                        mSession = Session(this)
                     ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
                         // Ensures next invocation of requestInstall() will either return
                         // INSTALLED or throw an exception.
@@ -357,18 +355,20 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                     }
                 }
                 // Create default config and check if supported.
-                val config = Config(mSession)
-                config.cloudAnchorMode = Config.CloudAnchorMode.ENABLED
-                mSession!!.configure(config)
-            } else {
-                mSession!!.resume()
-            }
+//                val config = Config(mSession)
+//                config.cloudAnchorMode = Config.CloudAnchorMode.ENABLED
+//                mSession!!.configure(config)
+//            } else {
+//                mSession!!.resume()
+//            }
         } catch (e: UnavailableUserDeclinedInstallationException) {
             setResult(Activity.RESULT_OK, intent)
             finish()
             return
         } catch (e: Exception) {  // Current catch statements.
             Log.d("Exception", e.printStackTrace().toString())
+            setResult(Activity.RESULT_OK, intent)
+            finish()
             return  // mSession is still null.
         }
     }
@@ -537,10 +537,10 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        mSession!!.pause()
-    }
+//    override fun onPause() {
+//        super.onPause()
+//        mSession!!.pause()
+//    }
 
 
     override fun fragmentReady() {

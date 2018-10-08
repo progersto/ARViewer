@@ -31,7 +31,7 @@
     <string name="step5_help">Изменение масштаба объекта</string>
     <string name="step5_2_help">Отлично! Можешь изменять\n масштаб 3D объекта\n с помощью двух пальцев</string>
 
-    <string name="for_continue_install_ARCore">Для продолжения работы приложения необходимоустановить ARCore</string>
+    <string name="for_continue_install_ARCore">Для продолжения работы приложения необходимо установить ARCore</string>
     <string name="device_unsupported">Устройство не поддерживает ARCore</string>
     <string name="unable_load_renderable">Невозможно загрузить данный объект</string>
     <string name="please_wait">Пожалуйста, подождите…</string>
