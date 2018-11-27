@@ -1,16 +1,26 @@
 package com.natife.arproject.arobjectlist
 
+import android.graphics.drawable.Drawable
 import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
+import com.google.vr.dynamite.client.f
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
-import com.squareup.picasso.Picasso
+
 
 class MultiViewTypeAdapter(
         private val list: MutableList<Model>,
@@ -90,7 +100,18 @@ class MultiViewTypeAdapter(
 
         override fun onBindViewHolder(model: Model) {
             nameItemImage.text = model.name
-            Picasso.get().load(model.image ?: 0).fit().into(itemArImage)
+//            Picasso.get().load(model.image ?: 0).fit().into(itemArImage)
+            Glide.with(itemView).load(model.image ?: 0)
+                    .apply(RequestOptions().fitCenter())
+                    .listener(object : RequestListener<Drawable> {
+                override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
+                    return false
+                }
+
+                override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                    return false
+                }
+            }).into(itemArImage)
 
             if (move) {
                 menuImageItem.visibility = View.GONE

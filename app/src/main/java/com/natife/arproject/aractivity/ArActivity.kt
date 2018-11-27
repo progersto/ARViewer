@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.*
 import android.support.v4.app.ActivityCompat
@@ -19,6 +20,12 @@ import android.view.PixelCopy
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
 import com.google.ar.core.*
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import com.google.ar.sceneform.*
@@ -30,12 +37,14 @@ import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.*
 import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
+import com.natife.arproject.R.drawable.model
 import com.natife.arproject.utils.*
-import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.toast
 import org.jetbrains.anko.uiThread
+import uk.co.appoly.arcorelocation.LocationMarker
+import uk.co.appoly.arcorelocation.LocationScene
 import java.io.File
 
 class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContract.View, OnFragmentReady {
@@ -46,7 +55,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var objParent: TransformableNode? = null
     private var helpStep: Int = 0
     private var mUserRequestedInstall = true
-//    private var mSession: Session? = null
+    //    private var mSession: Session? = null
     private var dialog: AlertDialog? = null
     private var view2d: View? = null
     private lateinit var image: ImageView
@@ -58,8 +67,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private lateinit var fragment: CustomArFragment
     private var cloudAnchor: Anchor? = null
     private var appAnchorState = AppAnchorState.NONE
-    //    private val snackbarHelper = SnackbarHelper()
-    //    private var storageManager: StorageManager? = null
 
     private enum class AppAnchorState {
         NONE,
@@ -83,6 +90,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         fragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as CustomArFragment
         fragment.planeDiscoveryController.hide()  // Hide initial hand gesture
         arSceneView = fragment.arSceneView
+
 
         name = intent.getStringExtra("name")
         val resImage = intent.getIntExtra("resImage", 0)
@@ -134,7 +142,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                     countObjList++
                     if (listNode.size > countObjList) {
                         createOldObj()
-                    }else{
+                    } else {
                         flagLoadNodelist = false
                     }
                 }
@@ -177,7 +185,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 changeHelpScreen()
             }
 
-            if (plane.type != Plane.Type.HORIZONTAL_UPWARD_FACING || appAnchorState != AppAnchorState.NONE) {
+            if (appAnchorState != AppAnchorState.NONE) {
                 return@setOnTapArPlaneListener
             }
             val anchor2 = hitResult.createAnchor()
@@ -211,10 +219,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
 
     private fun create2DObj(resImage: Int) {
-        view2d = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
-        image = view2d!!.findViewById(R.id.image)
-        Picasso.get().load(resImage).into(image)
-
         fragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, motionEvent: MotionEvent ->
             //            if (objParent == null) {  //create only one object
 
@@ -224,6 +228,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             anchorNodeParent.setParent(arSceneView.scene)
 
             //create empty obj for parent
+            if (objParent != null) {
+                objParent = null
+            }
             objParent = TransformableNode(fragment.transformationSystem)
             objParent?.setParent(anchorNodeParent)
             objParent?.select()
@@ -250,11 +257,26 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 //            val anchorNodeChild = AnchorNode(newAnchor)
 //            anchorNodeChild.setParent(arSceneView.scene)
 
-
-
-
+            if (objChild != null) {
+                objChild = null
+            }
             objChild = TransformableNode(fragment.transformationSystem)
             objChild?.rotationController?.rotationRateDegrees = 0f//запрет вращения
+
+            view2d = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
+            image = view2d!!.findViewById(R.id.image)
+
+            Glide.with(this).load(resImage)
+                    .apply(RequestOptions().fitCenter())
+                    .listener(object : RequestListener<Drawable> {
+                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
+                            return false
+                        }
+
+                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                            return false
+                        }
+                    }).into(image)
 
             //create object from View
             ViewRenderable.builder()
@@ -268,12 +290,12 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                             val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
                             val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
                             objChild?.worldRotation = upQuat
-                        } else if (plane.type == Plane.Type.HORIZONTAL_DOWNWARD_FACING) {
+                        } else if (plane.type == Plane.Type.HORIZONTAL_DOWNWARD_FACING) {//up
                             val yAxis = plane.centerPose.yAxis
                             val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
                             val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
                             objChild?.worldRotation = upQuat
-                        } else if (plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING) {
+                        } else if (plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING) {//down
                             val yAxis = plane.centerPose.yAxis
                             val planeNormal = Vector3(yAxis[0], yAxis[1], yAxis[2])
                             val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
@@ -362,25 +384,25 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         // Make sure ARCore is installed and up to date.
         try {
 //            if (mSession == null) {
-                when (ArCoreApk.getInstance().requestInstall(this, mUserRequestedInstall)) {
-                    ArCoreApk.InstallStatus.INSTALLED ->{
-                        Log.d("", "Null in enum argument")
-                    }
-                        // Success, create the AR session.
+            when (ArCoreApk.getInstance().requestInstall(this, mUserRequestedInstall)) {
+                ArCoreApk.InstallStatus.INSTALLED -> {
+                    Log.d("", "Null in enum argument")
+                }
+                // Success, create the AR session.
 //                        mSession = Session(this)
 
-                    ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
-                        // Ensures next invocation of requestInstall() will either return
-                        // INSTALLED or throw an exception.
-                        mUserRequestedInstall = false
-                        return
-                    }
-                    null -> {
-                        finish()
-                        Log.d("", "Null in enum argument")
-                    }
+                ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
+                    // Ensures next invocation of requestInstall() will either return
+                    // INSTALLED or throw an exception.
+                    mUserRequestedInstall = false
+                    return
                 }
-                // Create default config and check if supported.
+                null -> {
+                    finish()
+                    Log.d("", "Null in enum argument")
+                }
+            }
+            // Create default config and check if supported.
 //                val config = Config(mSession)
 //                config.cloudAnchorMode = Config.CloudAnchorMode.ENABLED
 //                mSession!!.configure(config)
@@ -459,6 +481,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                     footer.visibility = View.VISIBLE
                 }
             }
+//            locationScene.processFrame(frame)
         }
     }
 
