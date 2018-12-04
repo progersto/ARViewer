@@ -2,6 +2,9 @@ package com.natife.arproject.aractivity
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.google.ar.core.Anchor
+import com.google.ar.core.HitResult
+import com.google.ar.core.Plane
 import com.natife.arproject.ObjectForList
 import java.io.File
 import java.util.ArrayList

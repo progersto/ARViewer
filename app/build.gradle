@@ -33,6 +33,7 @@ dependencies {
     implementation 'com.android.support:support-media-compat:28.0.0'
     implementation 'com.android.support:animated-vector-drawable:28.0.0'
     implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:design:28.0.0'
 
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support:exifinterface:28.0.0'
@@ -69,6 +70,9 @@ dependencies {
 
     //Location for ARCORE
     //implementation 'com.github.appoly:ARCore-Location:1.1.2'
+
+    // Obj - a simple Wavefront OBJ file loader
+    implementation 'de.javagl:obj:0.2.1'
 }
 
 apply plugin: 'com.google.ar.sceneform.plugin'
