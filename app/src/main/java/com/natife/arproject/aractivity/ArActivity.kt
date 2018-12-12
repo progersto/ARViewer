@@ -1,8 +1,8 @@
 package com.natife.arproject.aractivity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -10,11 +10,10 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.*
-import android.renderscript.AllocationAdapter.create2D
-import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
-import android.support.v7.app.AlertDialog
+
 import android.support.v7.app.AppCompatActivity
+
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -36,6 +35,7 @@ import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.*
 import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
+
 import com.natife.arproject.aractivity.ArActivity.AppAnchorState.NONE
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
@@ -185,6 +185,8 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                             val obj3D = TransformableNode(fragment.transformationSystem)
                             obj3D.renderable = renderable
                             obj3D.setParent(anchorNode)
+                            obj3D.scaleController.minScale = 0.25f
+                            obj3D.scaleController.maxScale= 2f
                             fragment.arSceneView.scene.addChild(anchorNode)
                             obj3D.select()
                         }
@@ -225,6 +227,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         obj3D.renderable = renderable
                         obj3D.name = name
                         obj3D.select()
+                        obj3D.scaleController.minScale = 0.25f
+                        obj3D.scaleController.maxScale= 2f
+
                         obj3D.setOnTapListener { _, _ ->
                             Log.d("sss", "setOnTapListener")
                         }
@@ -271,7 +276,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             objChild = null
         }
         objChild = TransformableNode(fragment.transformationSystem)
-        objChild?.rotationController?.rotationRateDegrees = 0f//запрет вращения
+        objChild?.rotationController?.rotationRateDegrees = 0f//rotation prohibition
 
         val view2d: View = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
         image = view2d.findViewById(R.id.image)
@@ -297,7 +302,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
                         objChild?.worldRotation = upQuat
                     }
-
                 }
                 .exceptionally {
                     makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
@@ -345,7 +349,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
 
     private fun createDialog() {
-        dialog = android.support.v7.app.AlertDialog.Builder(this)
+        dialog = AlertDialog.Builder(this)
                 .setCancelable(false)
                 .show()
         dialog?.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
