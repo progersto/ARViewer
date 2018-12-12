@@ -62,6 +62,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var resImage: Int = 0
     private var save = false
     private var connection = true
+    private var oldObjectCreated = false
 
     private enum class AppAnchorState {
         NONE,
@@ -135,7 +136,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             }
             cloudState == Anchor.CloudAnchorState.SUCCESS -> {
                 val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
-                listNode.add(ObjectForList(cloudAnchorId, name, resImage))//save anchor
+                listNode.add(ObjectForList(cloudAnchorId, name, resImage))//save data object
                 toast("Объект сохранен")
                 appAnchorState = NONE
                 save = false
@@ -150,54 +151,68 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     }
 
     private fun resolving(cloudState: Anchor.CloudAnchorState) {
-        if (cloudState.isError) {
+        if (cloudState == Anchor.CloudAnchorState.ERROR_RESOLVING_LOCALIZATION_NO_MATCH) {
             toast("Подойдите ближе к точке восстановления объекта и наведите на нее камеру")
-            appAnchorState = NONE
-            progressBar.visibility = View.GONE
+            getCloudAncor()
         } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
-            progressBar.visibility = View.GONE
-            toast("Объект ${listNode[countObjList].name} восстановлен")
-            appAnchorState = NONE
-            countObjList++
-            if (listNode.size > countObjList) {
-                createOldObj()
-            } else {
-                flagLoadNodelist = false
+            if (oldObjectCreated) {
+                oldObjectCreated = false
+                createOldObject()
             }
         } else if (cloudState == Anchor.CloudAnchorState.TASK_IN_PROGRESS) {
             progressBar.visibility = View.VISIBLE
         }
     }
 
-    private fun createOldObj() {
+    private fun getCloudAncor() {
         if (flagLoadNodelist) {
+            oldObjectCreated = true
             val cloudAnchorId = listNode[countObjList].cloudAnchorId
             val resolvedAnchor = arSceneView.session.resolveCloudAnchor(cloudAnchorId)
+            if (cloudAnchor != null) {
+                cloudAnchor = null
+            }
             setCloudAnchor(resolvedAnchor)//set cloudAnchor for RESOLVING
             appAnchorState = AppAnchorState.RESOLVING
-
-            if (listNode[countObjList].resImage == 0) {
-                ModelRenderable.builder()
-                        .setSource(this, Uri.parse(listNode[countObjList].name))
-                        .build()
-                        .thenAccept { renderable ->
-                            val anchorNode = AnchorNode(resolvedAnchor)//set anchor from list
-                            val obj3D = TransformableNode(fragment.transformationSystem)
-                            obj3D.renderable = renderable
-                            obj3D.setParent(anchorNode)
-                            obj3D.scaleController.minScale = 0.25f
-                            obj3D.scaleController.maxScale= 2f
-                            fragment.arSceneView.scene.addChild(anchorNode)
-                            obj3D.select()
-                        }
-                        .exceptionally {
-                            makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                            null
-                        }
-            } else {
-                create2D(listNode[countObjList].resImage, null, null, resolvedAnchor)
-            }
         }
+    }
+
+    private fun createOldObject() {
+        if (listNode[countObjList].resImage == 0) {
+            ModelRenderable.builder()
+                    .setSource(this, Uri.parse(listNode[countObjList].name))
+                    .build()
+                    .thenAccept { renderable ->
+                        val anchorNode = AnchorNode(cloudAnchor)//set anchor from list
+                        val obj3D = TransformableNode(fragment.transformationSystem)
+                        obj3D.renderable = renderable
+                        obj3D.setParent(anchorNode)
+                        obj3D.scaleController.minScale = 0.25f
+                        obj3D.scaleController.maxScale = 2f
+                        fragment.arSceneView.scene.addChild(anchorNode)
+                        obj3D.select()
+                        finishCreateOldObj()
+                    }
+                    .exceptionally {
+                        makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
+                        null
+                    }
+        } else {
+            create2D(listNode[countObjList].resImage, null, null, cloudAnchor)
+        }
+    }
+
+    private fun finishCreateOldObj(){
+        progressBar.visibility = View.GONE
+        toast("Объект ${listNode[countObjList].name} восстановлен")
+        appAnchorState = NONE
+        countObjList++
+        if (listNode.size > countObjList) {
+            getCloudAncor()
+        } else {
+            flagLoadNodelist = false
+        }
+        oldObjectCreated = true
     }
 
     private fun create3DObj(name: String) {
@@ -228,7 +243,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         obj3D.name = name
                         obj3D.select()
                         obj3D.scaleController.minScale = 0.25f
-                        obj3D.scaleController.maxScale= 2f
+                        obj3D.scaleController.maxScale = 2f
 
                         obj3D.setOnTapListener { _, _ ->
                             Log.d("sss", "setOnTapListener")
@@ -301,6 +316,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         val planeNormal = Vector3(yAxis!![0], yAxis!![1], yAxis!![2])
                         val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
                         objChild?.worldRotation = upQuat
+                    }
+                    if (hitResult == null) {
+                        finishCreateOldObj()
                     }
                 }
                 .exceptionally {
@@ -432,7 +450,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             val cameraTrackingState = fragment.arSceneView.arFrame.camera.trackingState
             if (cameraTrackingState == TrackingState.TRACKING && flagSession) {
                 flagSession = false
-                createOldObj()
+                getCloudAncor()
             }
 
             if (!isFistInitAR(this)) {
