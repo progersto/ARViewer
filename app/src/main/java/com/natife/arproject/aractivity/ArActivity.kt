@@ -47,6 +47,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private lateinit var arSceneView: ArSceneView
     private var objChild: TransformableNode? = null
     private var objParent: TransformableNode? = null
+    private var currentObj: TransformableNode? = null
     private var helpStep: Int = 0
     private var mUserRequestedInstall = true
     private var dialog: AlertDialog? = null
@@ -63,6 +64,11 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var save = false
     private var connection = true
     private var oldObjectCreated = false
+    private var currentMinScale: Float = 0f
+    private var currentMaxScale: Float = 0f
+    private var minScale: Float = 0.25f
+    private var maxScale: Float = 2f
+
 
     private enum class AppAnchorState {
         NONE,
@@ -85,7 +91,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         fragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as CustomArFragment
         fragment.planeDiscoveryController.hide()  // Hide initial hand gesture
         arSceneView = fragment.arSceneView
-
 
         name = intent.getStringExtra("name")
         resImage = intent.getIntExtra("resImage", 0)
@@ -136,7 +141,8 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             }
             cloudState == Anchor.CloudAnchorState.SUCCESS -> {
                 val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
-                listNode.add(ObjectForList(cloudAnchorId, name, resImage))//save data object
+                listNode.add(ObjectForList(cloudAnchorId, name, resImage, currentObj!!.localScale.x))//save data object
+                currentObj = null
                 toast("Объект сохранен")
                 appAnchorState = NONE
                 save = false
@@ -187,8 +193,10 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         val obj3D = TransformableNode(fragment.transformationSystem)
                         obj3D.renderable = renderable
                         obj3D.setParent(anchorNode)
-                        obj3D.scaleController.minScale = 0.25f
-                        obj3D.scaleController.maxScale = 2f
+                        obj3D.scaleController.minScale = minScale
+                        obj3D.scaleController.maxScale = maxScale
+                        val currentScale = listNode[countObjList].currentScale
+                        obj3D.localScale= Vector3(currentScale, currentScale, currentScale)//set current scale object
                         fragment.arSceneView.scene.addChild(anchorNode)
                         obj3D.select()
                         finishCreateOldObj()
@@ -242,12 +250,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         obj3D.renderable = renderable
                         obj3D.name = name
                         obj3D.select()
-                        obj3D.scaleController.minScale = 0.25f
-                        obj3D.scaleController.maxScale = 2f
-
-                        obj3D.setOnTapListener { _, _ ->
-                            Log.d("sss", "setOnTapListener")
-                        }
+                        obj3D.scaleController.minScale = minScale
+                        obj3D.scaleController.maxScale = maxScale
+                        currentObj = obj3D
                     }
                     .exceptionally {
                         makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
@@ -316,6 +321,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                         val planeNormal = Vector3(yAxis!![0], yAxis!![1], yAxis!![2])
                         val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
                         objChild?.worldRotation = upQuat
+                        objChild!!.scaleController.minScale = minScale
+                        objChild!!.scaleController.maxScale = maxScale
+                        currentObj = objChild
                     }
                     if (hitResult == null) {
                         finishCreateOldObj()
