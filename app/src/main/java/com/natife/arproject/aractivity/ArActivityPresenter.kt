@@ -7,32 +7,27 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.os.Environment
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.Toast
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.google.ar.core.Anchor
 import com.google.ar.core.HitResult
-import com.google.ar.core.Plane
 import com.google.ar.sceneform.AnchorNode
-import com.google.ar.sceneform.math.Quaternion
-import com.google.ar.sceneform.math.Vector3
+import com.google.ar.sceneform.ArSceneView
+import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.TransformableNode
 import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
 import com.natife.arproject.arobjectlist.ArObjectListContract
 import com.natife.arproject.arobjectlist.ArObjectListRepository
-import org.jetbrains.anko.longToast
-import org.jetbrains.anko.toast
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
 
-class ArActivityPresenter(private val mView: ArActivityContract.View):ArActivityContract.Presenter {
+class ArActivityPresenter(private val mView: ArActivityContract.View) : ArActivityContract.Presenter {
+
 
     private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
@@ -47,11 +42,11 @@ class ArActivityPresenter(private val mView: ArActivityContract.View):ArActivity
         lateinit var file: File
         if (flag) {
             val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                    context.resources.getString(R.string.app_name) )// путь к файлу сохраняемого скрина
+                    context.resources.getString(R.string.app_name))// путь к файлу сохраняемого скрина
             if (!dir.exists()) {
                 dir.mkdirs()
             }
-            val date =  SimpleDateFormat("yyMMdd_HHmmss").format(Date())
+            val date = SimpleDateFormat("yyMMdd_HHmmss").format(Date())
             file = File(dir, "screen_$date.png")
         } else {
             file = File(context.externalCacheDir, "ar_3d_viewr.png")
@@ -87,4 +82,41 @@ class ArActivityPresenter(private val mView: ArActivityContract.View):ArActivity
         canvas.drawBitmap(bmp2, 0f, 0f, null)
         return bmOverlay
     }
+
+    override fun createObjParent(fragment: CustomArFragment, anchorNodeParent: AnchorNode): TransformableNode? {
+        //create empty obj for parent
+        val objParent = TransformableNode(fragment.transformationSystem)
+        objParent.setParent(anchorNodeParent)
+        objParent.select()
+        return objParent
+    }
+
+    override fun createAnchorParent(hitResult: HitResult?, resolvedAnchor: Anchor?, arSceneView: ArSceneView): AnchorNode {
+        // Create the Anchor Parent
+        val anchorNodeParent = if (hitResult != null) {
+            val anchorParent = hitResult.createAnchor()
+            AnchorNode(anchorParent)
+        } else {
+            AnchorNode(resolvedAnchor)
+        }
+        anchorNodeParent.setParent(arSceneView.scene)
+        return anchorNodeParent
+    }
+
+    override fun createAnchorChild(hitResult: HitResult?, resolvedAnchor: Anchor?,
+                                   arSceneView: ArSceneView, fragment: CustomArFragment) {
+        val anchorNodeChild: AnchorNode
+        if (hitResult != null) {
+            val anchorChild = hitResult.createAnchor()
+            val newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchorChild)
+            mView.setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
+            mView.setAnchorState(AppAnchorState.HOSTING)
+            anchorNodeChild = AnchorNode(anchorChild)
+        } else {
+            anchorNodeChild = AnchorNode(resolvedAnchor)
+        }
+        anchorNodeChild.setParent(arSceneView.scene)
+    }
+
+
 }

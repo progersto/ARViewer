@@ -33,20 +33,24 @@ import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.*
+import com.google.sceneform_assets.h
 import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
+import com.natife.arproject.di.CreatorObjectsModule
+import com.natife.arproject.di.DaggerCreatorObjectsComponent
+import com.natife.arproject.di.DaggerDataBaseComponent
+import com.natife.arproject.di.DatabaseModule
 
-import com.natife.arproject.aractivity.ArActivity.AppAnchorState.NONE
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.*
 import java.io.File
 
-class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContract.View, OnFragmentReady {
+class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContract.View, OnFragmentReady, OnCreator {
+
     private lateinit var mPresenter: ArActivityContract.Presenter
     private lateinit var arSceneView: ArSceneView
     private var objChild: TransformableNode? = null
-    private var objParent: TransformableNode? = null
     private var currentObj: TransformableNode? = null
     private var helpStep: Int = 0
     private var mUserRequestedInstall = true
@@ -59,24 +63,19 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var countObjList: Int = 0
     private lateinit var fragment: CustomArFragment
     private var cloudAnchor: Anchor? = null
-    private var appAnchorState = NONE
+    private var appAnchorState = AppAnchorState.NONE
     private var resImage: Int = 0
     private var save = false
     private var connection = true
     private var oldObjectCreated = false
-    private var currentMinScale: Float = 0f
-    private var currentMaxScale: Float = 0f
     private var minScale: Float = 0.25f
     private var maxScale: Float = 2f
-
-
-    private enum class AppAnchorState {
-        NONE,
-        HOSTING,
-        HOSTED,
-        RESOLVING,
-        RESOLVED
-    }
+    private var onCreator: OnCreator = this
+    private lateinit var creatorObjects: CreatorObjects
+    private lateinit var anchorNodeParent: AnchorNode
+    private var hitResult: HitResult? = null
+    private var plane: Plane? = null
+    private lateinit var newAnchor: Anchor
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +83,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         setContentView(R.layout.activity_main)
         mPresenter = ArActivityPresenter(this)
         listNode = mPresenter.getListNode()
+        creatorObjects = DaggerCreatorObjectsComponent.builder()
+                .creatorObjectsModule(CreatorObjectsModule(this, onCreator))
+                .build().getCreatorObjectsModule()
 
         // Enable AR related functionality on ARCore supported devices only.
         checkArCoreApkAvailability()
@@ -135,7 +137,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         when {
             cloudState.isError -> {
                 toast("Ошибка сохранения. Подойдите ближе к объекту и наведите на него камеру")
-                appAnchorState = NONE
+                appAnchorState = AppAnchorState.NONE
                 save = false
                 progressBar.visibility = View.GONE
             }
@@ -144,7 +146,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 listNode.add(ObjectForList(cloudAnchorId, name, resImage, currentObj!!.localScale.x))//save data object
                 currentObj = null
                 toast("Объект сохранен")
-                appAnchorState = NONE
+                appAnchorState = AppAnchorState.NONE
                 save = false
                 progressBar.visibility = View.GONE
             }
@@ -185,35 +187,16 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
     private fun createOldObject() {
         if (listNode[countObjList].resImage == 0) {
-            ModelRenderable.builder()
-                    .setSource(this, Uri.parse(listNode[countObjList].name))
-                    .build()
-                    .thenAccept { renderable ->
-                        val anchorNode = AnchorNode(cloudAnchor)//set anchor from list
-                        val obj3D = TransformableNode(fragment.transformationSystem)
-                        obj3D.renderable = renderable
-                        obj3D.setParent(anchorNode)
-                        obj3D.scaleController.minScale = minScale
-                        obj3D.scaleController.maxScale = maxScale
-                        val currentScale = listNode[countObjList].currentScale
-                        obj3D.localScale= Vector3(currentScale, currentScale, currentScale)//set current scale object
-                        fragment.arSceneView.scene.addChild(anchorNode)
-                        obj3D.select()
-                        finishCreateOldObj()
-                    }
-                    .exceptionally {
-                        makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                        null
-                    }
+            creatorObjects.createModelRenderable(listNode[countObjList].name)
         } else {
             create2D(listNode[countObjList].resImage, null, null, cloudAnchor)
         }
     }
 
-    private fun finishCreateOldObj(){
+    private fun finishCreateOldObj() {
         progressBar.visibility = View.GONE
         toast("Объект ${listNode[countObjList].name} восстановлен")
-        appAnchorState = NONE
+        appAnchorState = AppAnchorState.NONE
         countObjList++
         if (listNode.size > countObjList) {
             getCloudAncor()
@@ -229,69 +212,31 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 changeHelpScreen()
             }
 
-            if (appAnchorState != NONE) {
+            if (appAnchorState != AppAnchorState.NONE) {
                 return@setOnTapArPlaneListener
             }
             val anchor3D = hitResult.createAnchor()
-            val newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchor3D)
+            newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchor3D)
             setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
             appAnchorState = AppAnchorState.HOSTING
-            val anchorNode = AnchorNode(newAnchor)
-            anchorNode.setParent(arSceneView.scene)
 
             //create object
-            ModelRenderable.builder()
-                    .setSource(this, Uri.parse(name))
-                    .build()
-                    .thenAccept { renderable ->
-                        // Create the transformable object and add it to the anchor.
-                        val obj3D = TransformableNode(fragment.transformationSystem)
-                        obj3D.setParent(anchorNode)
-                        obj3D.renderable = renderable
-                        obj3D.name = name
-                        obj3D.select()
-                        obj3D.scaleController.minScale = minScale
-                        obj3D.scaleController.maxScale = maxScale
-                        currentObj = obj3D
-                    }
-                    .exceptionally {
-                        makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                        null
-                    }
+            creatorObjects.createModelRenderable(name)
         }//OnTapArPlaneListener
     }//create3DObj
 
     private fun create2D(resImage: Int, hitResult: HitResult?, plane: Plane?, resolvedAnchor: Anchor?) {
+        this.hitResult = hitResult
+        this.plane = plane
+
         // Create the Anchor Parent
-        val anchorNodeParent = if (hitResult != null) {
-            val anchorParent = hitResult.createAnchor()
-            AnchorNode(anchorParent)
-        } else {
-            AnchorNode(resolvedAnchor)
-        }
-        anchorNodeParent.setParent(arSceneView.scene)
-
-        //create empty obj for parent
-        if (objParent != null) {
-            objParent = null
-        }
-        objParent = TransformableNode(fragment.transformationSystem)
-        objParent?.setParent(anchorNodeParent)
-        objParent?.select()
-
+        anchorNodeParent = mPresenter.createAnchorParent(hitResult, resolvedAnchor, arSceneView)
+//        //create empty obj for parent
+        val objParent = mPresenter.createObjParent(fragment, anchorNodeParent)
         // Create the Anchor Child
-        val anchorNodeChild: AnchorNode
-        if (hitResult != null) {
-            val anchorChild = hitResult.createAnchor()
-            val newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchorChild)
-            setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
-            appAnchorState = AppAnchorState.HOSTING
-            anchorNodeChild = AnchorNode(anchorChild)
-        } else {
-            anchorNodeChild = AnchorNode(resolvedAnchor)
-        }
-        anchorNodeChild.setParent(arSceneView.scene)
+        mPresenter.createAnchorChild(hitResult, resolvedAnchor, arSceneView, fragment)
 
+        //create obj child
         if (objChild != null) {
             objChild = null
         }
@@ -304,35 +249,8 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         Glide.with(this).load(resImage).apply(RequestOptions().fitCenter()).into(image)
 
         //create object from View
-        ViewRenderable.builder()
-                .setView(this, view2d)
-                .build()
-                .thenAccept { renderable ->
-                    objChild!!.renderable = renderable
-                    // Change the rotation
-                    var yAxis: FloatArray? = null
-                    if (hitResult != null) {
-                        plane?.also { plane -> yAxis = plane.centerPose.yAxis }
-                    } else {
-                        val pose = anchorNodeParent.anchor.pose
-                        yAxis = pose.yAxis
-                    }
-                    yAxis?.also {
-                        val planeNormal = Vector3(yAxis!![0], yAxis!![1], yAxis!![2])
-                        val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-                        objChild?.worldRotation = upQuat
-                        objChild!!.scaleController.minScale = minScale
-                        objChild!!.scaleController.maxScale = maxScale
-                        currentObj = objChild
-                    }
-                    if (hitResult == null) {
-                        finishCreateOldObj()
-                    }
-                }
-                .exceptionally {
-                    makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
-                    null
-                }
+        creatorObjects.createViewRenderable(view2d)
+
         objChild?.setParent(objParent)
         objChild?.setOnTouchListener { _, _ -> objParent!!.select() }
     }
@@ -497,9 +415,14 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     }
 
 
-    private fun setCloudAnchor(newAnchor: Anchor?) {
+    override fun setCloudAnchor(newAnchor: Anchor?) {
         cloudAnchor = newAnchor
-        appAnchorState = NONE
+        appAnchorState = AppAnchorState.NONE
+    }
+
+
+    override fun setAnchorState(newAppAnchorState: AppAnchorState) {
+        appAnchorState = newAppAnchorState
     }
 
     private fun changeHelpScreen() {
@@ -593,5 +516,56 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
 
     override fun fragmentReady() {
         flagSession = true
+    }
+
+    override fun thenAcceptModel(modelRenderable: ModelRenderable) {
+         val obj3D = TransformableNode(fragment.transformationSystem)
+        obj3D.renderable = modelRenderable
+        obj3D.scaleController.minScale = minScale
+        obj3D.scaleController.maxScale = maxScale
+        obj3D.select()
+        when (appAnchorState) {
+            AppAnchorState.RESOLVING -> {
+                val anchorNode = AnchorNode(cloudAnchor)//set anchor from list
+                obj3D.setParent(anchorNode)
+                val currentScale = listNode[countObjList].currentScale
+                obj3D.localScale = Vector3(currentScale, currentScale, currentScale)//set current scale object
+                fragment.arSceneView.scene.addChild(anchorNode)
+                finishCreateOldObj()
+            }
+            AppAnchorState.HOSTING -> {
+                val anchorNode = AnchorNode(newAnchor)
+                anchorNode.setParent(arSceneView.scene)
+                obj3D.setParent(anchorNode)
+                currentObj = obj3D
+            }
+        }
+    }
+
+    override fun thenAcceptView(viewRenderable: ViewRenderable) {
+        objChild!!.renderable = viewRenderable
+        // Change the rotation
+        var yAxis: FloatArray? = null
+        if (hitResult != null) {
+            plane?.also { plane -> yAxis = plane.centerPose.yAxis }
+        } else {
+            val pose = anchorNodeParent.anchor.pose
+            yAxis = pose.yAxis
+        }
+        yAxis?.also {
+            val planeNormal = Vector3(yAxis!![0], yAxis!![1], yAxis!![2])
+            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
+            objChild?.worldRotation = upQuat
+            objChild!!.scaleController.minScale = minScale
+            objChild!!.scaleController.maxScale = maxScale
+            currentObj = objChild
+        }
+        if (hitResult == null) {
+            finishCreateOldObj()
+        }
+    }
+
+    override fun exceptionally() {
+        makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
     }
 }
