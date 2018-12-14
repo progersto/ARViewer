@@ -28,7 +28,6 @@ import javax.inject.Inject
 
 class ArActivityPresenter(private val mView: ArActivityContract.View) : ArActivityContract.Presenter {
 
-
     private val mRepository: ArObjectListContract.Repository = ArObjectListRepository.getInstance()
 
 
@@ -81,14 +80,6 @@ class ArActivityPresenter(private val mView: ArActivityContract.View) : ArActivi
         canvas.drawBitmap(bmp1, Matrix(), null)
         canvas.drawBitmap(bmp2, 0f, 0f, null)
         return bmOverlay
-    }
-
-    override fun createObjParent(fragment: CustomArFragment, anchorNodeParent: AnchorNode): TransformableNode? {
-        //create empty obj for parent
-        val objParent = TransformableNode(fragment.transformationSystem)
-        objParent.setParent(anchorNodeParent)
-        objParent.select()
-        return objParent
     }
 
     override fun createAnchorParent(hitResult: HitResult?, resolvedAnchor: Anchor?, arSceneView: ArSceneView): AnchorNode {

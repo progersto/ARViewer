@@ -24,7 +24,6 @@ interface ArActivityContract {
         fun createFileForIntent(flag: Boolean, bitmap: Bitmap, context: Context): File
         fun getBitmapFromView(view: android.view.View): Bitmap
         fun overlay(bmp1: Bitmap, bmp2: Bitmap): Bitmap
-        fun createObjParent(fragment: CustomArFragment, anchorNodeParent: AnchorNode): TransformableNode?
         fun createAnchorParent(hitResult: HitResult?, resolvedAnchor: Anchor?, arSceneView: ArSceneView): AnchorNode
         fun createAnchorChild(hitResult: HitResult?, resolvedAnchor: Anchor?,
                               arSceneView: ArSceneView, fragment: CustomArFragment)

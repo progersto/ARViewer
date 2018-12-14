@@ -29,17 +29,13 @@ import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationExceptio
 import com.google.ar.sceneform.*
 import com.google.ar.sceneform.math.Quaternion
 import com.google.ar.sceneform.math.Vector3
-
-import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
+
 import com.google.ar.sceneform.ux.*
-import com.google.sceneform_assets.h
 import com.natife.arproject.ObjectForList
 import com.natife.arproject.R
 import com.natife.arproject.di.CreatorObjectsModule
 import com.natife.arproject.di.DaggerCreatorObjectsComponent
-import com.natife.arproject.di.DaggerDataBaseComponent
-import com.natife.arproject.di.DatabaseModule
 
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
@@ -68,11 +64,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     private var save = false
     private var connection = true
     private var oldObjectCreated = false
-    private var minScale: Float = 0.25f
-    private var maxScale: Float = 2f
     private var onCreator: OnCreator = this
     private lateinit var creatorObjects: CreatorObjects
-    private lateinit var anchorNodeParent: AnchorNode
+//    private lateinit var anchorNodeParent: AnchorNode
     private var hitResult: HitResult? = null
     private var plane: Plane? = null
     private lateinit var newAnchor: Anchor
@@ -83,16 +77,17 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         setContentView(R.layout.activity_main)
         mPresenter = ArActivityPresenter(this)
         listNode = mPresenter.getListNode()
-        creatorObjects = DaggerCreatorObjectsComponent.builder()
-                .creatorObjectsModule(CreatorObjectsModule(this, onCreator))
-                .build().getCreatorObjectsModule()
-
-        // Enable AR related functionality on ARCore supported devices only.
-        checkArCoreApkAvailability()
 
         fragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as CustomArFragment
         fragment.planeDiscoveryController.hide()  // Hide initial hand gesture
         arSceneView = fragment.arSceneView
+
+        creatorObjects = DaggerCreatorObjectsComponent.builder()
+                .creatorObjectsModule(CreatorObjectsModule(this, onCreator, fragment))
+                .build().getCreatorObjectsModule()
+
+        // Enable AR related functionality on ARCore supported devices only.
+        checkArCoreApkAvailability()
 
         name = intent.getStringExtra("name")
         resImage = intent.getIntExtra("resImage", 0)
@@ -230,29 +225,16 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         this.plane = plane
 
         // Create the Anchor Parent
-        anchorNodeParent = mPresenter.createAnchorParent(hitResult, resolvedAnchor, arSceneView)
-//        //create empty obj for parent
-        val objParent = mPresenter.createObjParent(fragment, anchorNodeParent)
+        val anchorNodeParent = mPresenter.createAnchorParent(hitResult, resolvedAnchor, arSceneView)
         // Create the Anchor Child
         mPresenter.createAnchorChild(hitResult, resolvedAnchor, arSceneView, fragment)
 
-        //create obj child
-        if (objChild != null) {
-            objChild = null
-        }
-        objChild = TransformableNode(fragment.transformationSystem)
-        objChild?.rotationController?.rotationRateDegrees = 0f//rotation prohibition
-
         val view2d: View = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
         image = view2d.findViewById(R.id.image)
-
         Glide.with(this).load(resImage).apply(RequestOptions().fitCenter()).into(image)
 
         //create object from View
-        creatorObjects.createViewRenderable(view2d)
-
-        objChild?.setParent(objParent)
-        objChild?.setOnTouchListener { _, _ -> objParent!!.select() }
+        creatorObjects.createViewRenderable(view2d, anchorNodeParent)
     }
 
 
@@ -518,12 +500,8 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         flagSession = true
     }
 
-    override fun thenAcceptModel(modelRenderable: ModelRenderable) {
-         val obj3D = TransformableNode(fragment.transformationSystem)
-        obj3D.renderable = modelRenderable
-        obj3D.scaleController.minScale = minScale
-        obj3D.scaleController.maxScale = maxScale
-        obj3D.select()
+    override fun thenAcceptModel(transformableNode: TransformableNode) {
+        val obj3D = transformableNode
         when (appAnchorState) {
             AppAnchorState.RESOLVING -> {
                 val anchorNode = AnchorNode(cloudAnchor)//set anchor from list
@@ -542,8 +520,9 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         }
     }
 
-    override fun thenAcceptView(viewRenderable: ViewRenderable) {
-        objChild!!.renderable = viewRenderable
+    override fun thenAcceptView(transformableNode: TransformableNode, anchorNodeParent: AnchorNode) {
+        objChild = transformableNode
+
         // Change the rotation
         var yAxis: FloatArray? = null
         if (hitResult != null) {
@@ -551,17 +530,13 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         } else {
             val pose = anchorNodeParent.anchor.pose
             yAxis = pose.yAxis
+            finishCreateOldObj()
         }
         yAxis?.also {
             val planeNormal = Vector3(yAxis!![0], yAxis!![1], yAxis!![2])
             val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
             objChild?.worldRotation = upQuat
-            objChild!!.scaleController.minScale = minScale
-            objChild!!.scaleController.maxScale = maxScale
             currentObj = objChild
-        }
-        if (hitResult == null) {
-            finishCreateOldObj()
         }
     }
 

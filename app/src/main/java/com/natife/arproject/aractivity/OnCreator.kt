@@ -1,10 +1,10 @@
 package com.natife.arproject.aractivity
 
-import com.google.ar.sceneform.rendering.ModelRenderable
-import com.google.ar.sceneform.rendering.ViewRenderable
+import com.google.ar.sceneform.AnchorNode
+import com.google.ar.sceneform.ux.TransformableNode
 
 interface OnCreator {
-    fun thenAcceptModel(modelRenderable: ModelRenderable)
-    fun thenAcceptView(viewRenderable: ViewRenderable)
+    fun thenAcceptModel(transformableNode: TransformableNode)
+    fun thenAcceptView(transformableNode: TransformableNode, anchorNodeParent: AnchorNode)
     fun exceptionally()
 }
