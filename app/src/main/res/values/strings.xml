@@ -17,7 +17,8 @@
 
     <string name="version_game">Версия 1.0</string>
     <string name="contact">Разработчик <a href="https://natife.com">Natife.com</a></string>
-    <string name="Найти">Search</string>
+    <string name="share_via">Поделиться изображением через</string>
+    <string name="search">Найти</string>
     <string name="share_text">Скриншот приложения AR 3D Viewer</string>
     <string name="share_URI"><a href="https://natife.com">https://natife.com</a></string>
 

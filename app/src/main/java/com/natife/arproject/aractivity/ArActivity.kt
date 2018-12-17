@@ -1,12 +1,16 @@
 package com.natife.arproject.aractivity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.*
@@ -41,208 +45,29 @@ import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.*
 import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
-class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContract.View, OnFragmentReady, OnCreator {
+class ArActivity : AppCompatActivity(), OnView {
 
-    private lateinit var mPresenter: ArActivityContract.Presenter
-    private lateinit var arSceneView: ArSceneView
-    private var objChild: TransformableNode? = null
-    private var currentObj: TransformableNode? = null
-    private var helpStep: Int = 0
     private var mUserRequestedInstall = true
     private var dialog: AlertDialog? = null
-    private lateinit var image: ImageView
-    private lateinit var listNode: MutableList<ObjectForList>
     private var name: String = ""
-    private var flagLoadNodelist: Boolean = false
-    private var flagSession: Boolean = false
-    private var countObjList: Int = 0
-    private lateinit var fragment: CustomArFragment
-    private var cloudAnchor: Anchor? = null
-    private var appAnchorState = AppAnchorState.NONE
     private var resImage: Int = 0
-    private var save = false
-    private var connection = true
-    private var oldObjectCreated = false
-    private var onCreator: OnCreator = this
-    private lateinit var creatorObjects: CreatorObjects
-//    private lateinit var anchorNodeParent: AnchorNode
-    private var hitResult: HitResult? = null
-    private var plane: Plane? = null
-    private lateinit var newAnchor: Anchor
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        mPresenter = ArActivityPresenter(this)
-        listNode = mPresenter.getListNode()
-
-        fragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as CustomArFragment
-        fragment.planeDiscoveryController.hide()  // Hide initial hand gesture
-        arSceneView = fragment.arSceneView
-
-        creatorObjects = DaggerCreatorObjectsComponent.builder()
-                .creatorObjectsModule(CreatorObjectsModule(this, onCreator, fragment))
-                .build().getCreatorObjectsModule()
-
-        // Enable AR related functionality on ARCore supported devices only.
-        checkArCoreApkAvailability()
 
         name = intent.getStringExtra("name")
         resImage = intent.getIntExtra("resImage", 0)
 
-        if (resImage != 0) {
-            create2DObj(resImage) //load 2D object
-        } else {
-            create3DObj(name)  //load 3D object
-        }//if
-        if (listNode.size > 0) {
-            flagLoadNodelist = true
-        }
-        arSceneView.scene.addOnUpdateListener(this) //You can do this anywhere. I do it on activity creation post inflating the fragment
+        // Enable AR related functionality on ARCore supported devices only.
+        checkArCoreApkAvailability()
         initView()
     }//onCreate
-
-
-    private fun checkUpdatedAnchor() {
-        if (appAnchorState != AppAnchorState.HOSTING && appAnchorState != AppAnchorState.RESOLVING) {
-            return
-        }
-        if (cloudAnchor != null) {
-            val cloudState = cloudAnchor!!.cloudAnchorState
-
-            if (checkConnection(this)) {
-                connection = true
-                if (appAnchorState == AppAnchorState.HOSTING) {
-                    hosting(cloudState)
-                } else if (appAnchorState == AppAnchorState.RESOLVING) {
-                    resolving(cloudState)
-                }
-            } else {
-                if (connection) {
-                    longToast("Отсутствует интернет, сохранение позиции невозможно")
-                    connection = false
-                }
-            }
-        }
-    }
-
-    private fun hosting(cloudState: Anchor.CloudAnchorState) {
-        when {
-            cloudState.isError -> {
-                toast("Ошибка сохранения. Подойдите ближе к объекту и наведите на него камеру")
-                appAnchorState = AppAnchorState.NONE
-                save = false
-                progressBar.visibility = View.GONE
-            }
-            cloudState == Anchor.CloudAnchorState.SUCCESS -> {
-                val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
-                listNode.add(ObjectForList(cloudAnchorId, name, resImage, currentObj!!.localScale.x))//save data object
-                currentObj = null
-                toast("Объект сохранен")
-                appAnchorState = AppAnchorState.NONE
-                save = false
-                progressBar.visibility = View.GONE
-            }
-            cloudState == Anchor.CloudAnchorState.TASK_IN_PROGRESS && !save -> {
-                longToast("Сохранение позиции...")
-                progressBar.visibility = View.VISIBLE
-                save = true
-            }
-        }
-    }
-
-    private fun resolving(cloudState: Anchor.CloudAnchorState) {
-        if (cloudState == Anchor.CloudAnchorState.ERROR_RESOLVING_LOCALIZATION_NO_MATCH) {
-            toast("Подойдите ближе к точке восстановления объекта и наведите на нее камеру")
-            getCloudAncor()
-        } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
-            if (oldObjectCreated) {
-                oldObjectCreated = false
-                createOldObject()
-            }
-        } else if (cloudState == Anchor.CloudAnchorState.TASK_IN_PROGRESS) {
-            progressBar.visibility = View.VISIBLE
-        }
-    }
-
-    private fun getCloudAncor() {
-        if (flagLoadNodelist) {
-            oldObjectCreated = true
-            val cloudAnchorId = listNode[countObjList].cloudAnchorId
-            val resolvedAnchor = arSceneView.session.resolveCloudAnchor(cloudAnchorId)
-            if (cloudAnchor != null) {
-                cloudAnchor = null
-            }
-            setCloudAnchor(resolvedAnchor)//set cloudAnchor for RESOLVING
-            appAnchorState = AppAnchorState.RESOLVING
-        }
-    }
-
-    private fun createOldObject() {
-        if (listNode[countObjList].resImage == 0) {
-            creatorObjects.createModelRenderable(listNode[countObjList].name)
-        } else {
-            create2D(listNode[countObjList].resImage, null, null, cloudAnchor)
-        }
-    }
-
-    private fun finishCreateOldObj() {
-        progressBar.visibility = View.GONE
-        toast("Объект ${listNode[countObjList].name} восстановлен")
-        appAnchorState = AppAnchorState.NONE
-        countObjList++
-        if (listNode.size > countObjList) {
-            getCloudAncor()
-        } else {
-            flagLoadNodelist = false
-        }
-        oldObjectCreated = true
-    }
-
-    private fun create3DObj(name: String) {
-        fragment.setOnTapArPlaneListener { hitResult: HitResult, _: Plane, _: MotionEvent ->
-            if (!isFistInitAR(this)) {
-                changeHelpScreen()
-            }
-
-            if (appAnchorState != AppAnchorState.NONE) {
-                return@setOnTapArPlaneListener
-            }
-            val anchor3D = hitResult.createAnchor()
-            newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchor3D)
-            setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
-            appAnchorState = AppAnchorState.HOSTING
-
-            //create object
-            creatorObjects.createModelRenderable(name)
-        }//OnTapArPlaneListener
-    }//create3DObj
-
-    private fun create2D(resImage: Int, hitResult: HitResult?, plane: Plane?, resolvedAnchor: Anchor?) {
-        this.hitResult = hitResult
-        this.plane = plane
-
-        // Create the Anchor Parent
-        val anchorNodeParent = mPresenter.createAnchorParent(hitResult, resolvedAnchor, arSceneView)
-        // Create the Anchor Child
-        mPresenter.createAnchorChild(hitResult, resolvedAnchor, arSceneView, fragment)
-
-        val view2d: View = LayoutInflater.from(this).inflate(R.layout.temp, null, false)
-        image = view2d.findViewById(R.id.image)
-        Glide.with(this).load(resImage).apply(RequestOptions().fitCenter()).into(image)
-
-        //create object from View
-        creatorObjects.createViewRenderable(view2d, anchorNodeParent)
-    }
-
-
-    private fun create2DObj(resImage: Int) {
-        fragment.setOnTapArPlaneListener { hitResult: HitResult, plane: Plane, _: MotionEvent ->
-            create2D(resImage, hitResult, plane, null)
-        }
-    }//create2DObj
 
 
     private fun initView() {
@@ -282,7 +107,6 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         dialog?.setContentView(R.layout.dialog_create_screen)
     }//createDialog
 
-
     private fun getFile(flag: Boolean, callback: (file: File) -> Unit) {
         val builder = StrictMode.VmPolicy.Builder()
         StrictMode.setVmPolicy(builder.build())
@@ -290,14 +114,16 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
         handlerThread.start()
 
         doAsync {
-            val firstBitmap = Bitmap.createBitmap(arSceneView.width, arSceneView.height, Bitmap.Config.ARGB_8888)
-            val secondBitmap = mPresenter.getBitmapFromView(screen)
-            PixelCopy.request(arSceneView, firstBitmap, {
+            val helperActivity = HelperActivity()
+            val fragment: CustomArFragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as CustomArFragment
+            val firstBitmap = Bitmap.createBitmap(fragment.arSceneView.width, fragment.arSceneView.height, Bitmap.Config.ARGB_8888)
+            val secondBitmap = helperActivity.getBitmapFromView(screen)
+            PixelCopy.request(fragment.arSceneView, firstBitmap, {
                 if (!this@ArActivity.isDestroyed) {
 
-                    val finishBitmap = mPresenter.overlay(firstBitmap, secondBitmap)
+                    val finishBitmap = helperActivity.overlay(firstBitmap, secondBitmap)
                     doAsync {
-                        val file = mPresenter.createFileForIntent(flag, finishBitmap, this@ArActivity)
+                        val file = helperActivity.createFileForIntent(flag, finishBitmap, this@ArActivity)
                         uiThread {
                             callback(file)
                         }
@@ -349,65 +175,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     }
 
 
-    override fun onUpdate(frameTime: FrameTime) {
-        //get the frame from the scene for shorthand
-        val frame = arSceneView.arFrame
-        if (frame != null) {
-            checkUpdatedAnchor()
-
-            val cameraTrackingState = fragment.arSceneView.arFrame.camera.trackingState
-            if (cameraTrackingState == TrackingState.TRACKING && flagSession) {
-                flagSession = false
-                getCloudAncor()
-            }
-
-            if (!isFistInitAR(this)) {
-
-                if (helpStep == 0) {
-                    helpStep = HELP_1
-                    changeHelpScreen()
-                }
-
-                if (helpStep == HELP_2) {
-                    //get the trackables to ensure planes are detected
-                    val iterator = frame.getUpdatedTrackables(Plane::class.java).iterator()
-                    while (iterator.hasNext()) {
-                        val plane = iterator.next()
-                        if (plane.trackingState == TrackingState.TRACKING) {
-                            //the plane is detected
-                            changeHelpScreen()
-                        }
-                    }
-                }
-
-                if (objChild != null) {
-                    if (objChild!!.translationController.isTransforming && (helpStep == HELP_4
-                                    || helpStep == HELP_5 || helpStep == HELP_6)) {
-                        changeHelpScreen()
-                    }
-                }
-            } else {
-                if (back.visibility == View.GONE) {
-                    back.visibility = View.VISIBLE
-                    logoTextImage.visibility = View.VISIBLE
-                    footer.visibility = View.VISIBLE
-                }
-            }
-        }
-    }
-
-
-    override fun setCloudAnchor(newAnchor: Anchor?) {
-        cloudAnchor = newAnchor
-        appAnchorState = AppAnchorState.NONE
-    }
-
-
-    override fun setAnchorState(newAppAnchorState: AppAnchorState) {
-        appAnchorState = newAppAnchorState
-    }
-
-    private fun changeHelpScreen() {
+    override fun changeHelpScreen(helpStep: Int): Int {
         when (helpStep) {
             HELP_1 -> {
                 skipHelpText.visibility = View.VISIBLE
@@ -441,10 +209,10 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
                 finishStepHelp()
             }
         }
-        helpStep++
+        return helpStep.inc()
     }
 
-    private fun finishStepHelp() {
+    override fun finishStepHelp() {
         skipHelpText.visibility = View.GONE
         skipHelpIcon.visibility = View.GONE
         textHead.visibility = View.GONE
@@ -466,7 +234,7 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
             intent.putExtra(Intent.EXTRA_TEXT, resources.getString(R.string.share_URI))
             intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
             intent.type = "image/png"
-            startActivity(Intent.createChooser(intent, "Share image via"))
+            startActivity(Intent.createChooser(intent, resources.getString(R.string.share_via)))
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -496,51 +264,15 @@ class ArActivity : AppCompatActivity(), Scene.OnUpdateListener, ArActivityContra
     }
 
 
-    override fun fragmentReady() {
-        flagSession = true
+    override fun progressBar(visible: Int) {
+        progressBar.visibility = visible
     }
 
-    override fun thenAcceptModel(transformableNode: TransformableNode) {
-        val obj3D = transformableNode
-        when (appAnchorState) {
-            AppAnchorState.RESOLVING -> {
-                val anchorNode = AnchorNode(cloudAnchor)//set anchor from list
-                obj3D.setParent(anchorNode)
-                val currentScale = listNode[countObjList].currentScale
-                obj3D.localScale = Vector3(currentScale, currentScale, currentScale)//set current scale object
-                fragment.arSceneView.scene.addChild(anchorNode)
-                finishCreateOldObj()
-            }
-            AppAnchorState.HOSTING -> {
-                val anchorNode = AnchorNode(newAnchor)
-                anchorNode.setParent(arSceneView.scene)
-                obj3D.setParent(anchorNode)
-                currentObj = obj3D
-            }
+    override fun notSetHelp() {
+        if (back.visibility == View.GONE) {
+            back.visibility = View.VISIBLE
+            logoTextImage.visibility = View.VISIBLE
+            footer.visibility = View.VISIBLE
         }
-    }
-
-    override fun thenAcceptView(transformableNode: TransformableNode, anchorNodeParent: AnchorNode) {
-        objChild = transformableNode
-
-        // Change the rotation
-        var yAxis: FloatArray? = null
-        if (hitResult != null) {
-            plane?.also { plane -> yAxis = plane.centerPose.yAxis }
-        } else {
-            val pose = anchorNodeParent.anchor.pose
-            yAxis = pose.yAxis
-            finishCreateOldObj()
-        }
-        yAxis?.also {
-            val planeNormal = Vector3(yAxis!![0], yAxis!![1], yAxis!![2])
-            val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-            objChild?.worldRotation = upQuat
-            currentObj = objChild
-        }
-    }
-
-    override fun exceptionally() {
-        makeText(this, getString(R.string.unable_load_renderable), Toast.LENGTH_LONG).show()
     }
 }
