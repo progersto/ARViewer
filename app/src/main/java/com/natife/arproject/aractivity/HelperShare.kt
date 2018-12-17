@@ -14,7 +14,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-class HelperActivity {
+class HelperShare {
 
     @SuppressLint("SimpleDateFormat")
      fun createFileForIntent(flag: Boolean, bitmap: Bitmap, context: Context): File {

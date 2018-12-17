@@ -8,21 +8,21 @@ import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.TransformableNode
 
-class CreatorObjects(private val context: Context, private val onCreator: OnCreator, private  val fragment: CustomArFragment) {
+class CreatorObjects(private val context: Context, private val onCreator: OnCreator, private val fragment: CustomArFragment) {
     private var minScale: Float = 0.25f
     private var maxScale: Float = 2f
 
-    fun createModelRenderable(name: String){
+    fun createModelRenderable(name: String) {
         ModelRenderable.builder()
                 .setSource(context, Uri.parse(name))
                 .build()
-                .thenAccept { modelRenderable ->
-                    val obj3D = TransformableNode(fragment.transformationSystem)
-                    obj3D.renderable = modelRenderable
-                    obj3D.scaleController.minScale = minScale
-                    obj3D.scaleController.maxScale = maxScale
-                    obj3D.select()
-                    onCreator.thenAcceptModel(obj3D)
+                .thenAccept { objectRenderable ->
+                    val container3D = TransformableNode(fragment.transformationSystem)
+                    container3D.renderable = objectRenderable
+                    container3D.scaleController.minScale = minScale
+                    container3D.scaleController.maxScale = maxScale
+                    container3D.select()
+                    onCreator.thenAcceptModel(container3D)
                 }
                 .exceptionally {
                     onCreator.exceptionally()
@@ -30,33 +30,33 @@ class CreatorObjects(private val context: Context, private val onCreator: OnCrea
                 }
     }
 
-    fun createViewRenderable(view2d: View, anchorNodeParent: AnchorNode){
+    fun createViewRenderable(view2d: View, anchorNodeParent: AnchorNode) {
         ViewRenderable.builder()
                 .setView(context, view2d)
                 .build()
-                .thenAccept { renderable ->
-                    val objChild = TransformableNode(fragment.transformationSystem)
-                    objChild.renderable = renderable
-                    objChild.rotationController?.rotationRateDegrees = 0f//rotation prohibition
+                .thenAccept { objRenderable ->
+                    val containerChild = TransformableNode(fragment.transformationSystem)
+                    containerChild.renderable = objRenderable
+                    containerChild.rotationController?.rotationRateDegrees = 0f//rotation prohibition
 
                     //create empty obj for parent
-                    val objParent = createObjParent(fragment, anchorNodeParent)
-                    objChild.setParent(objParent)
-                    objChild.setOnTouchListener { _, _ -> objParent!!.select() }
+                    val objParent = createContainerParent(fragment, anchorNodeParent)
+                    containerChild.setParent(objParent)
+                    containerChild.setOnTouchListener { _, _ -> objParent!!.select() }
 
-                    onCreator.thenAcceptView(objChild, anchorNodeParent)  }
+                    onCreator.thenAcceptView(containerChild, anchorNodeParent)
+                }
                 .exceptionally {
                     onCreator.exceptionally()
                     null
                 }
     }
 
-    private fun createObjParent(fragment: CustomArFragment, anchorNodeParent: AnchorNode): TransformableNode? {
+    private fun createContainerParent(fragment: CustomArFragment, anchorNodeParent: AnchorNode): TransformableNode? {
         //create empty obj for parent
-        val objParent = TransformableNode(fragment.transformationSystem)
-        objParent.setParent(anchorNodeParent)
-        objParent.select()
-        return objParent
+        val containerParent = TransformableNode(fragment.transformationSystem)
+        containerParent.setParent(anchorNodeParent)
+        containerParent.select()
+        return containerParent
     }
-
 }

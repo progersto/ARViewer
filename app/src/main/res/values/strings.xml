@@ -21,6 +21,7 @@
     <string name="search">Найти</string>
     <string name="share_text">Скриншот приложения AR 3D Viewer</string>
     <string name="share_URI"><a href="https://natife.com">https://natife.com</a></string>
+    <string name="screen_save">Скриншот сохранен</string>
 
     <string name="step1_help">Для начала наведи камеру \n на то место (плоскость), \n где желаешь видеть \n свой 3D объект</string>
     <string name="step2_help">Добавление 3D объекта</string>
@@ -36,6 +37,12 @@
     <string name="device_unsupported">Устройство не поддерживает ARCore</string>
     <string name="unable_load_renderable">Невозможно загрузить данный объект</string>
     <string name="please_wait">Пожалуйста, подождите…</string>
+
+    <string name="no_internet">Отсутствует интернет, сохранение позиции невозможно</string>
+    <string name="obj_saved">Объект сохранен</string>
+    <string name="save_anchor">Сохранение позиции...</string>
+    <string name="save_error">Ошибка сохранения. Подойдите ближе к объекту и наведите на него камеру</string>
+    <string name="recovery_error">Подойдите ближе к точке восстановления объекта и наведите на нее камеру</string>
 
 
 </resources>

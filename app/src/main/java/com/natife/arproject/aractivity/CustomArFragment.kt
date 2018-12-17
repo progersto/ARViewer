@@ -46,8 +46,8 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
     private var resImage: Int = 0
     private var flagLoadNodelist: Boolean = false
     private var helpStep: Int = 0
-    private var objChild: TransformableNode? = null
-    private var currentObj: TransformableNode? = null
+    private var containerChild: TransformableNode? = null
+    private var currentContainer: TransformableNode? = null
     private var countObjList: Int = 0
     private lateinit var onView: OnView
 
@@ -136,8 +136,8 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
                     }
                 }
 
-                if (objChild != null) {
-                    if (objChild!!.translationController.isTransforming && (helpStep == HELP_4
+                if (containerChild != null) {
+                    if (containerChild!!.translationController.isTransforming && (helpStep == HELP_4
                                     || helpStep == HELP_5 || helpStep == HELP_6)) {
                         helpStep = onView.changeHelpScreen(helpStep)
                     }
@@ -178,41 +178,43 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
                 }
             } else {
                 if (connection) {
-                    longToast("Отсутствует интернет, сохранение позиции невозможно")
+                    longToast(resources.getString(R.string.no_internet))
                     connection = false
                 }
             }
         }
     }
 
+    //save
     private fun hosting(cloudState: Anchor.CloudAnchorState) {
         when {
             cloudState.isError -> {
-                toast("Ошибка сохранения. Подойдите ближе к объекту и наведите на него камеру")
+                toast(resources.getString(R.string.save_error))
                 appAnchorState = AppAnchorState.NONE
                 save = false
                 progressBar.visibility = View.GONE
             }
             cloudState == Anchor.CloudAnchorState.SUCCESS -> {
                 val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
-                listNode.add(ObjectForList(cloudAnchorId, name, resImage, currentObj!!.localScale.x))//save data object
-                currentObj = null
-                toast("Объект сохранен")
+                listNode.add(ObjectForList(cloudAnchorId, name, resImage, currentContainer!!.localScale.x))//save data object
+                currentContainer = null
+                toast(resources.getString(R.string.obj_saved))
                 appAnchorState = AppAnchorState.NONE
                 save = false
                 onView.progressBar(View.GONE)
             }
             cloudState == Anchor.CloudAnchorState.TASK_IN_PROGRESS && !save -> {
-                longToast("Сохранение позиции...")
+                longToast(resources.getString(R.string.save_anchor))
                 onView.progressBar(View.VISIBLE)
                 save = true
             }
         }
     }
 
+    //recovery
     private fun resolving(cloudState: Anchor.CloudAnchorState) {
         if (cloudState == Anchor.CloudAnchorState.ERROR_RESOLVING_LOCALIZATION_NO_MATCH) {
-            toast("Подойдите ближе к точке восстановления объекта и наведите на нее камеру")
+            toast(resources.getString(R.string.recovery_error))
             getCloudAncor()
         } else if (cloudState == Anchor.CloudAnchorState.SUCCESS) {
             if (oldObjectCreated) {
@@ -308,15 +310,15 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
                 val anchorNode = AnchorNode(newAnchor)
                 anchorNode.setParent(arSceneView.scene)
                 obj3D.setParent(anchorNode)
-                currentObj = obj3D
+                currentContainer = obj3D
             }
         }
     }
 
     override fun thenAcceptView(transformableNode: TransformableNode, anchorNodeParent: AnchorNode) {
-        objChild = transformableNode
+        containerChild = transformableNode
 
-        // Change the rotation
+        //put the view on the plane
         var yAxis: FloatArray? = null
         if (hitResult != null) {
             plane?.also { plane -> yAxis = plane.centerPose.yAxis }
@@ -328,8 +330,8 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         yAxis?.also {
             val planeNormal = Vector3(yAxis!![0], yAxis!![1], yAxis!![2])
             val upQuat: Quaternion = Quaternion.lookRotation(planeNormal, Vector3.up())
-            objChild?.worldRotation = upQuat
-            currentObj = objChild
+            containerChild?.worldRotation = upQuat
+            currentContainer = containerChild
         }
     }
 
