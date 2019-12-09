@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.google.ar.sceneform.plugin'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 28
@@ -19,8 +22,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    // Sceneform libraries use language constructs from Java 8.
-    // Add these compile options if targeting minSdkVersion < 26.
+
     compileOptions {
         sourceCompatibility 1.8
         targetCompatibility 1.8
@@ -75,7 +77,3 @@ dependencies {
     // Obj - a simple Wavefront OBJ file loader
     implementation 'de.javagl:obj:0.2.1'
 }
-
-apply plugin: 'com.google.ar.sceneform.plugin'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-kapt'

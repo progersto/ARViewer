@@ -27,7 +27,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.support.v4.longToast
 import org.jetbrains.anko.support.v4.toast
 
-class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActivityContract.View {
+class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActivityContract.View, OnView.OnFragmentDo {
     private lateinit var mPresenter: ArActivityContract.Presenter
     private var flagSession: Boolean = false
     private lateinit var creatorObjects: CreatorObjects
@@ -49,18 +49,19 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
     private var containerChild: TransformableNode? = null
     private var currentContainer: TransformableNode? = null
     private var countObjList: Int = 0
-    private lateinit var onView: OnView
+    private lateinit var onView: OnView.OnActivityDo
 
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
-        onView = context as OnView
+        onView = context as OnView.OnActivityDo
     }
 
     override fun getSessionConfiguration(session: Session): Config {
         planeDiscoveryController.setInstructionView(null)
         val config = super.getSessionConfiguration(session)
         config.cloudAnchorMode = Config.CloudAnchorMode.ENABLED
+
         return config
     }
 
@@ -111,7 +112,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         if (frame != null) {
             checkUpdatedAnchor()
 
-            val cameraTrackingState = arSceneView.arFrame.camera.trackingState
+            val cameraTrackingState = arSceneView.arFrame?.camera?.trackingState
             if (cameraTrackingState == TrackingState.TRACKING && flagSession) {
                 flagSession = false
                 getCloudAncor()
@@ -153,7 +154,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         if (flagLoadNodelist) {
             oldObjectCreated = true
             val cloudAnchorId = listNode[countObjList].cloudAnchorId
-            val resolvedAnchor = arSceneView.session.resolveCloudAnchor(cloudAnchorId)
+            val resolvedAnchor = arSceneView.session?.resolveCloudAnchor(cloudAnchorId)
             if (cloudAnchor != null) {
                 cloudAnchor = null
             }
@@ -257,7 +258,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
                 return@setOnTapArPlaneListener
             }
             val anchor3D = hitResult.createAnchor()
-            newAnchor = arSceneView.session.hostCloudAnchor(anchor3D)
+            newAnchor = arSceneView.session!!.hostCloudAnchor(anchor3D)
             setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
             appAnchorState = AppAnchorState.HOSTING
 
@@ -323,8 +324,8 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         if (hitResult != null) {
             plane?.also { plane -> yAxis = plane.centerPose.yAxis }
         } else {
-            val pose = anchorNodeParent.anchor.pose
-            yAxis = pose.yAxis
+            val pose = anchorNodeParent.anchor?.pose
+            yAxis = pose?.yAxis
             finishCreateOldObj()
         }
         yAxis?.also {
@@ -341,11 +342,11 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
 
 
     private fun createAnchorChild(hitResult: HitResult?, resolvedAnchor: Anchor?,
-                          arSceneView: ArSceneView, fragment: CustomArFragment) {
+                                  arSceneView: ArSceneView, fragment: CustomArFragment) {
         val anchorNodeChild: AnchorNode
         if (hitResult != null) {
             val anchorChild = hitResult.createAnchor()
-            val newAnchor = fragment.arSceneView.session.hostCloudAnchor(anchorChild)
+            val newAnchor = fragment.arSceneView.session?.hostCloudAnchor(anchorChild)
             setCloudAnchor(newAnchor)//set cloudAnchor for HOSTING
             appAnchorState = AppAnchorState.HOSTING
             anchorNodeChild = AnchorNode(anchorChild)
@@ -365,5 +366,10 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         }
         anchorNodeParent.setParent(arSceneView.scene)
         return anchorNodeParent
+    }
+
+    override fun showPlane() {
+        //скрываем точки показа плоскости
+        this.arSceneView.planeRenderer.isEnabled = !this.arSceneView.planeRenderer.isEnabled
     }
 }

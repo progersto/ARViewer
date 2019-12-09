@@ -29,7 +29,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.*
 import java.io.File
 
-class ArActivity : AppCompatActivity(), OnView {
+class ArActivity : AppCompatActivity(), OnView.OnActivityDo,  ArActivityContract.View{
 
     private var mUserRequestedInstall = true
     private var dialog: AlertDialog? = null
@@ -75,6 +75,11 @@ class ArActivity : AppCompatActivity(), OnView {
                 dialog?.show()
             }
             askForPermission()
+        }
+
+        val onView: OnView.OnFragmentDo  = supportFragmentManager.findFragmentById(R.id.ux_fragment) as CustomArFragment
+        planeDiscovery.setOnClickListener{
+            onView.showPlane()
         }
     }//initView
 

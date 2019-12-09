@@ -1,13 +1,12 @@
 package com.natife.arproject.aractivity;
 
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.ar.core.Anchor;
@@ -15,19 +14,13 @@ import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
-import com.google.ar.core.Pose;
 import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.HitTestResult;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.Scene;
-import com.google.ar.sceneform.math.Vector3;
-import com.google.ar.sceneform.rendering.Color;
-import com.google.ar.sceneform.rendering.MaterialFactory;
 import com.google.ar.sceneform.rendering.ModelRenderable;
-import com.google.ar.sceneform.rendering.Renderable;
-import com.google.ar.sceneform.rendering.ShapeFactory;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 import com.natife.arproject.R;

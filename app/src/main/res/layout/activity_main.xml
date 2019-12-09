@@ -190,6 +190,21 @@
 
 
                 <ImageView
+                    android:id="@+id/planeDiscovery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:adjustViewBounds="true"
+                    android:background="@drawable/circle"
+                    android:padding="10dp"
+                    android:visibility="visible"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/screenShot"
+                    app:layout_constraintStart_toEndOf="@+id/share"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_blur" />
+
+                <ImageView
                     android:id="@+id/screenShot"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
