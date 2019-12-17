@@ -1,20 +1,21 @@
 package com.natife.arproject.aractivity
 
-import android.content.Context
 import android.net.Uri
 import android.view.View
 import com.google.ar.sceneform.AnchorNode
+import com.google.ar.sceneform.assets.RenderableSource
 import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.TransformableNode
 
-class CreatorObjects(private val context: Context, private val onCreator: OnCreator, private val fragment: CustomArFragment) {
-    private var minScale: Float = 0.25f
+class CreatorObjects(private val onCreator: OnCreator, private val fragment: CustomArFragment) {
     private var maxScale: Float = 2f
+    private var minScale: Float = 0.25f
 
-    fun createModelRenderable(name: String) {
+    fun createModelRenderable(link: String) {
+        val cont = fragment.context!!
         ModelRenderable.builder()
-                .setSource(context, Uri.parse(name))
+                .setSource(cont, getRanderableSource(link))
                 .build()
                 .thenAccept { objectRenderable ->
                     val container3D = TransformableNode(fragment.transformationSystem)
@@ -32,7 +33,7 @@ class CreatorObjects(private val context: Context, private val onCreator: OnCrea
 
     fun createViewRenderable(view2d: View, anchorNodeParent: AnchorNode) {
         ViewRenderable.builder()
-                .setView(context, view2d)
+                .setView(fragment.context, view2d)
                 .build()
                 .thenAccept { objRenderable ->
                     val containerChild = TransformableNode(fragment.transformationSystem)
@@ -50,6 +51,16 @@ class CreatorObjects(private val context: Context, private val onCreator: OnCrea
                     onCreator.exceptionally()
                     null
                 }
+    }
+
+    private fun getRanderableSource(link: String): RenderableSource? {
+        return RenderableSource.builder().setSource(
+                fragment.context,
+                Uri.parse(link),
+                RenderableSource.SourceType.GLTF2)
+                .setScale(0.5f)  // Scale the original model to 50%.
+                .setRecenterMode(RenderableSource.RecenterMode.ROOT)
+                .build()
     }
 
     private fun createContainerParent(fragment: CustomArFragment, anchorNodeParent: AnchorNode): TransformableNode? {

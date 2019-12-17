@@ -20,7 +20,7 @@ class ArObjectListPresenter(
                 val imageList = mRepository.initList()
                 modelDao.insert(*imageList.toTypedArray())
             }else{
-                val newFolder = Model(null, Model.FOLDER_TYPE, name, null, null, parentFolderId)
+                val newFolder = Model(null, Model.FOLDER_TYPE, name, null, "", parentFolderId)
                 modelDao.insert(newFolder)
             }
             uiThread {

@@ -1,8 +1,7 @@
 package com.natife.arproject.arobjectlist
 
 import android.arch.lifecycle.MutableLiveData
-import com.google.ar.sceneform.ux.TransformableNode
-import com.natife.arproject.ObjectForList
+import com.natife.arproject.entity.ObjectForList
 import com.natife.arproject.data.entityRoom.Model
 
 interface ArObjectListContract {

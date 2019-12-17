@@ -11,9 +11,7 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.*
 import android.support.v4.app.ActivityCompat
-
 import android.support.v7.app.AppCompatActivity
-
 import android.util.Log
 import android.view.PixelCopy
 import android.view.View
@@ -21,9 +19,7 @@ import android.widget.Toast
 import android.widget.Toast.makeText
 import com.google.ar.core.*
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
-
 import com.natife.arproject.R
-
 import com.natife.arproject.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.*
@@ -33,16 +29,10 @@ class ArActivity : AppCompatActivity(), OnView.OnActivityDo,  ArActivityContract
 
     private var mUserRequestedInstall = true
     private var dialog: AlertDialog? = null
-    private var name: String = ""
-    private var resImage: Int = 0
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        name = intent.getStringExtra("name")
-        resImage = intent.getIntExtra("resImage", 0)
 
         // Enable AR related functionality on ARCore supported devices only.
         checkArCoreApkAvailability()

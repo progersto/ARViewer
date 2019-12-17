@@ -1,12 +1,11 @@
 package com.natife.arproject.arobjectlist
 
 import android.arch.lifecycle.MutableLiveData
-import com.natife.arproject.ObjectForList
+import com.natife.arproject.entity.ObjectForList
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
 
 class ArObjectListRepository : ArObjectListContract.Repository {
-
 
     private lateinit var listGeneral: MutableList<Model>
     private val modelLiveData = MutableLiveData<Model>()
@@ -32,14 +31,18 @@ class ArObjectListRepository : ArObjectListContract.Repository {
 
     override fun initList(): ArrayList<Model> {
         val listImage: ArrayList<Model> = java.util.ArrayList()
-        listImage.add(Model(null, Model.IMAGE_TYPE, "model", R.drawable.model, "model.sfb", null))
-        listImage.add(Model(null, Model.IMAGE_TYPE, "tricycle", R.drawable.tricycle, "tricycle.sfb", null))
-        listImage.add(Model(null, Model.IMAGE_TYPE, "uranus", R.drawable.uranus, "Uranus.sfb", null))
-        listImage.add(Model(null, Model.IMAGE_TYPE, "model2", R.drawable.model2, "model2.sfb", null))
-        listImage.add(Model(null, Model.IMAGE_TYPE, "model3", R.drawable.model3, "model3.sfb", null))
-        listImage.add(Model(null, Model.IMAGE_TYPE, "model4", R.drawable.model4, "model4.sfb", null))
-        listImage.add(Model(null, Model.IMAGE_TYPE, "chair", R.drawable.chair, "Chair2.sfb", null))
-        listImage.add(Model(null, Model.IMAGE_TYPE, "andy", R.drawable.andy, "andy.sfb", null))
+
+        listImage.add(Model(null,
+                Model.IMAGE_TYPE,
+                "Duck",
+                R.drawable.model,
+                "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/1.0/Duck/glTF/Duck.gltf",
+                null))
+
+        listImage.add(Model(null, Model.IMAGE_TYPE, "паук", R.drawable.tricycle,
+                "https://raw.githubusercontent.com/progersto/test/master/app/src/main/assets/archive%20(3)/model.gltf", null))
+        listImage.add(Model(null, Model.IMAGE_TYPE, "CesiumMan", R.drawable.uranus,
+                "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF/CesiumMan.gltf", null))
         return listImage
     }
 
@@ -47,10 +50,10 @@ class ArObjectListRepository : ArObjectListContract.Repository {
     override fun createGeneralList(listImage: List<Model>, listFolder: List<Model>): MutableList<Model> {
         listGeneral = java.util.ArrayList()
         if (!listFolder.isEmpty()) {
-            listGeneral.add(Model(null, Model.TEXT_TYPE, "Папки", null, null, 1))
+            listGeneral.add(Model(null, Model.TEXT_TYPE, "Папки", null, "", 1))
             listGeneral.addAll(listFolder)
         }
-        listGeneral.add(Model(null, Model.TEXT_TYPE, "Файлы", null, null, 1))
+        listGeneral.add(Model(null, Model.TEXT_TYPE, "Файлы", null, "", 1))
         listGeneral.addAll(listImage)
         return listGeneral
     }
@@ -71,5 +74,4 @@ class ArObjectListRepository : ArObjectListContract.Repository {
     override fun getListNodeFromRepo(): MutableList<ObjectForList> {
         return listNode
     }
-
 }

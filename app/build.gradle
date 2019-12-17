@@ -46,11 +46,11 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     // Provides ArFragment, and other UX resources.
-    implementation 'com.google.ar.sceneform.ux:sceneform-ux:1.5.1'
+    implementation 'com.google.ar.sceneform.ux:sceneform-ux:1.14.0'
     // Alternatively, use ArSceneView without the UX dependency.
-    implementation 'com.google.ar.sceneform:core:1.5.1'
-    implementation 'com.google.ar:core:1.5.0'
-    implementation 'com.google.ar.sceneform:assets:1.5.1'
+    implementation 'com.google.ar.sceneform:core:1.14.0'
+    implementation 'com.google.ar.sceneform:assets:1.14.0'
+    implementation 'com.google.ar:core:1.14.0'
 
     //ROOM
     implementation 'android.arch.persistence.room:runtime:1.1.1'
@@ -62,14 +62,14 @@ dependencies {
 
     // dagger 2
     kapt 'com.google.dagger:dagger-compiler:2.16'
-    implementation 'com.google.dagger:dagger:2.16'
+    implementation 'com.google.dagger:dagger:2.25.2'
     //lifedata
     implementation "android.arch.lifecycle:extensions:1.1.1"
     annotationProcessor "android.arch.lifecycle:compiler:1.1.1"
 
     //glide
-    implementation 'com.github.bumptech.glide:glide:4.8.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
+    implementation 'com.github.bumptech.glide:glide:4.9.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
 
     //Location for ARCORE
     //implementation 'com.github.appoly:ARCore-Location:1.1.2'

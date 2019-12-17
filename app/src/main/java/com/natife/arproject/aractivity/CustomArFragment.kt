@@ -18,7 +18,7 @@ import com.google.ar.sceneform.math.Quaternion
 import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.ux.ArFragment
 import com.google.ar.sceneform.ux.TransformableNode
-import com.natife.arproject.ObjectForList
+import com.natife.arproject.entity.ObjectForList
 import com.natife.arproject.R
 import com.natife.arproject.di.CreatorObjectsModule
 import com.natife.arproject.di.DaggerCreatorObjectsComponent
@@ -43,6 +43,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
     private lateinit var image: ImageView
     private lateinit var listNode: MutableList<ObjectForList>
     private var name: String = ""
+    private var link: String = ""
     private var resImage: Int = 0
     private var flagLoadNodelist: Boolean = false
     private var helpStep: Int = 0
@@ -71,7 +72,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         listNode = mPresenter.getListNode()
 
         creatorObjects = DaggerCreatorObjectsComponent.builder()
-                .creatorObjectsModule(CreatorObjectsModule(context!!, onCreator, this))
+                .creatorObjectsModule(CreatorObjectsModule(onCreator, this))
                 .build().getCreatorObjectsModule()
 
         if (listNode.size > 0) {
@@ -85,13 +86,16 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         activity?.intent?.getStringExtra("name")?.let {
             name = it
         }
+        activity?.intent?.getStringExtra("link")?.let {
+            link = it
+        }
         activity?.intent?.getIntExtra("resImage", 0)?.let {
             resImage = it
         }
         if (resImage != 0) {
             create2DObj(resImage) //load 2D object
         } else {
-            create3DObj(name)  //load 3D object
+            create3DObj()  //load 3D object
         }//if
     }
 
@@ -168,46 +172,49 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
             return
         }
         if (cloudAnchor != null) {
-            val cloudState = cloudAnchor!!.cloudAnchorState
-
-            if (checkConnection(context!!)) {
-                connection = true
-                if (appAnchorState == AppAnchorState.HOSTING) {
-                    hosting(cloudState)
-                } else if (appAnchorState == AppAnchorState.RESOLVING) {
-                    resolving(cloudState)
-                }
-            } else {
-                if (connection) {
-                    longToast(resources.getString(R.string.no_internet))
-                    connection = false
+            cloudAnchor?.also {
+                val cloudState = it.cloudAnchorState
+                if (checkConnection(context!!)) {
+                    connection = true
+                    if (appAnchorState == AppAnchorState.HOSTING) {
+                        hosting(cloudState)
+                    } else if (appAnchorState == AppAnchorState.RESOLVING) {
+                        resolving(cloudState)
+                    }
+                } else {
+                    if (connection) {
+                        longToast(resources.getString(R.string.no_internet))
+                        connection = false
+                    }
                 }
             }
         }
     }
 
     //save
-    private fun hosting(cloudState: Anchor.CloudAnchorState) {
-        when {
-            cloudState.isError -> {
-                toast(resources.getString(R.string.save_error))
-                appAnchorState = AppAnchorState.NONE
-                save = false
-                progressBar.visibility = View.GONE
-            }
-            cloudState == Anchor.CloudAnchorState.SUCCESS -> {
-                val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
-                listNode.add(ObjectForList(cloudAnchorId, name, resImage, currentContainer!!.localScale.x))//save data object
-                currentContainer = null
-                toast(resources.getString(R.string.obj_saved))
-                appAnchorState = AppAnchorState.NONE
-                save = false
-                onView.progressBar(View.GONE)
-            }
-            cloudState == Anchor.CloudAnchorState.TASK_IN_PROGRESS && !save -> {
-                longToast(resources.getString(R.string.save_anchor))
-                onView.progressBar(View.VISIBLE)
-                save = true
+    private fun hosting(cloudSt: Anchor.CloudAnchorState?) {
+        cloudSt?.also { cloudState ->
+            when {
+                cloudState.isError -> {
+                    toast(resources.getString(R.string.save_error))
+                    appAnchorState = AppAnchorState.NONE
+                    save = false
+                    progressBar.visibility = View.GONE
+                }
+                cloudState == Anchor.CloudAnchorState.SUCCESS -> {
+                    val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
+                    listNode.add(ObjectForList(cloudAnchorId, name, link, resImage, currentContainer!!.localScale.x))//save data object
+                    currentContainer = null
+                    toast(resources.getString(R.string.obj_saved))
+                    appAnchorState = AppAnchorState.NONE
+                    save = false
+                    onView.progressBar(View.GONE)
+                }
+                cloudState == Anchor.CloudAnchorState.TASK_IN_PROGRESS && !save -> {
+                    longToast(resources.getString(R.string.save_anchor))
+                    onView.progressBar(View.VISIBLE)
+                    save = true
+                }
             }
         }
     }
@@ -229,7 +236,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
 
     private fun createOldObject() {
         if (listNode[countObjList].resImage == 0) {
-            creatorObjects.createModelRenderable(listNode[countObjList].name)
+            creatorObjects.createModelRenderable(listNode[countObjList].link)
         } else {
             create2D(listNode[countObjList].resImage, null, null, cloudAnchor)
         }
@@ -248,7 +255,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
         oldObjectCreated = true
     }
 
-    private fun create3DObj(name: String) {
+    private fun create3DObj() {
         setOnTapArPlaneListener { hitResult: HitResult, _: Plane, _: MotionEvent ->
             if (!isFistInitAR(context!!)) {
                 helpStep = onView.changeHelpScreen(helpStep)
@@ -263,7 +270,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
             appAnchorState = AppAnchorState.HOSTING
 
             //create object
-            creatorObjects.createModelRenderable(name)
+            creatorObjects.createModelRenderable(link)
         }//OnTapArPlaneListener
     }//create3DObj
 

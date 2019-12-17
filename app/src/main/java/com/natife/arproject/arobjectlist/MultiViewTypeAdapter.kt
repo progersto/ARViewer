@@ -1,32 +1,36 @@
 package com.natife.arproject.arobjectlist
 
-import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.support.v7.app.AlertDialog
 import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.Target
-import com.google.vr.dynamite.client.f
+import com.google.ar.core.Session
+import com.google.ar.sceneform.Node
+import com.google.ar.sceneform.Scene
+import com.google.ar.sceneform.assets.RenderableSource
+import com.google.ar.sceneform.math.Vector3
+import com.google.ar.sceneform.rendering.ModelRenderable
+import com.google.ar.sceneform.ux.FootprintSelectionVisualizer
+import com.google.ar.sceneform.ux.TransformableNode
+import com.google.ar.sceneform.ux.TransformationSystem
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
-
+import kotlinx.android.synthetic.main.item_ar.view.*
+import kotlinx.android.synthetic.main.item_folder.view.*
+import kotlinx.android.synthetic.main.item_name_directory.view.*
 
 class MultiViewTypeAdapter(
         private val list: MutableList<Model>,
         private val imageListener: OnItemImageListener,
         private val move: Boolean,
-        private val idMovable: Int)
+        private val idMovable: Int
+//        private var session: Session
+)
     : RecyclerView.Adapter<MultiViewTypeAdapter.AbsViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MultiViewTypeAdapter.AbsViewHolder {
@@ -52,38 +56,31 @@ class MultiViewTypeAdapter(
 
     inner class TextTypeViewHolder(itemView: View) : AbsViewHolder(itemView) {
 
-        private var txtType: TextView = itemView.findViewById(R.id.nameDirectory)
-
         override fun onBindViewHolder(model: Model) {
-            txtType.text = model.name
+            itemView.nameDirectory.text = model.name
         }
     }
 
     inner class FolderTypeViewHolder(itemView: View) : AbsViewHolder(itemView) {
 
-        internal var nameFolder: TextView = itemView.findViewById(R.id.nameFolder)
-        internal var menuFolderItem: RelativeLayout = itemView.findViewById(R.id.menuFolderItem)
-        internal var folderCardView: CardView = itemView.findViewById(R.id.folderCardView)
-        internal var backgroundMoveFolder: RelativeLayout = itemView.findViewById(R.id.backgroundMoveFolder)
-
         override fun onBindViewHolder(model: Model) {
-            nameFolder.text = model.name
+            itemView.nameFolder.text = model.name
             if (move) {
-                menuFolderItem.visibility = View.GONE
+                itemView.menuFolderItem.visibility = View.GONE
                 if (model.id != idMovable) {
-                    folderCardView.setOnClickListener {
+                    itemView.folderCardView.setOnClickListener {
                         imageListener.onItemFolderClick(adapterPosition)
                     }
-                    backgroundMoveFolder.visibility = View.GONE
+                    itemView.backgroundMoveFolder.visibility = View.GONE
                 } else {
-                    backgroundMoveFolder.visibility = View.VISIBLE
+                    itemView.backgroundMoveFolder.visibility = View.VISIBLE
                 }
             } else {
-                menuFolderItem.visibility = View.VISIBLE
-                menuFolderItem.setOnClickListener {
+                itemView.menuFolderItem.visibility = View.VISIBLE
+                itemView.menuFolderItem.setOnClickListener {
                     imageListener.onItemMenuClick(adapterPosition)
                 }
-                folderCardView.setOnClickListener {
+                itemView.folderCardView.setOnClickListener {
                     imageListener.onItemFolderClick(adapterPosition)
                 }
             }
@@ -92,47 +89,93 @@ class MultiViewTypeAdapter(
 
 
     inner class ImageTypeViewHolder(itemView: View) : AbsViewHolder(itemView) {
-
-        internal var itemArImage: ImageView = itemView.findViewById(R.id.itemArImage)
-        internal var nameItemImage: TextView = itemView.findViewById(R.id.nameItemImage)
-        internal var menuImageItem: RelativeLayout = itemView.findViewById(R.id.menuImageItem)
-        internal var backgroundMove: RelativeLayout = itemView.findViewById(R.id.backgroundMove)
+        lateinit var scene: Scene
+        lateinit var cupCakeNode: Node
 
         override fun onBindViewHolder(model: Model) {
-            nameItemImage.text = model.name
-//            Picasso.get().load(model.image ?: 0).fit().into(itemArImage)
-            Glide.with(itemView).load(model.image ?: 0)
-                    .apply(RequestOptions().fitCenter())
-                    .listener(object : RequestListener<Drawable> {
-                override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                    return false
-                }
+            itemView.nameItemImage.text = model.name
 
-                override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-                    return false
-                }
-            }).into(itemArImage)
+            scene = itemView.sceneView.scene
+//            itemView.sceneView.setupSession(session)
+            itemView.sceneView.resume()
+            renderObject( getRanderableSource(model.vrLink)) // Render the object
 
             if (move) {
-                menuImageItem.visibility = View.GONE
-                backgroundMove.visibility = View.VISIBLE
+                itemView.menuImageItem.visibility = View.GONE
+                itemView.backgroundMove.visibility = View.VISIBLE
             } else {
-                menuImageItem.setOnClickListener {
+                itemView.menuImageItem.setOnClickListener {
                     imageListener.onItemMenuClick(adapterPosition)
                 }
-                itemArImage.setOnClickListener {
+                itemView.sceneView.setOnClickListener {
                     imageListener.onItemObjClick(adapterPosition)
                 }
-                itemArImage.setOnLongClickListener {
+                itemView.sceneView.setOnLongClickListener {
                     imageListener.onItemObjLongClick(adapterPosition, model.image!!)
                     return@setOnLongClickListener true
                 }
 
-
-                menuImageItem.visibility = View.VISIBLE
-                backgroundMove.visibility = View.GONE
+                itemView.menuImageItem.visibility = View.VISIBLE
+                itemView.backgroundMove.visibility = View.GONE
             }
         }
+
+        private fun renderObject(parse: RenderableSource?) {
+            ModelRenderable.builder()
+                    .setSource(itemView.context, parse)
+                    .build()
+                    .thenAccept {
+                        addNodeToScene(it)
+                    }
+                    .exceptionally {
+                        val builder = AlertDialog.Builder(itemView.context)
+                        builder.setMessage(it.message)
+                                .setTitle("error!")
+                        val dialog = builder.create()
+                        dialog.show()
+                        return@exceptionally null
+                    }
+
+        }
+
+        private fun getRanderableSource(link: String): RenderableSource? {
+            return RenderableSource.builder()
+                    .setSource(itemView.context,
+                            Uri.parse(link),
+                            RenderableSource.SourceType.GLTF2)
+                    .setScale(0.5f)  // Scale the original model to 50%.
+                    .setRecenterMode(RenderableSource.RecenterMode.CENTER)
+                    .build()
+        }
+
+        private fun addNodeToScene(model: ModelRenderable?) {
+            model?.let {
+                cupCakeNode = Node().apply {
+                    setParent(scene)
+                    localPosition = Vector3(0f, 0f, -2.4f)
+                    localScale = Vector3(3f, 3f, -2f)
+                    renderable = it
+                }
+
+                scene.addChild(cupCakeNode)
+            }
+        }
+
+//        private fun createNode(model: ModelRenderable?) {
+//            val transformationSystem = TransformationSystem(itemView.sceneView.resources.displayMetrics, FootprintSelectionVisualizer())
+//            val transformableNode = TransformableNode(transformationSystem).apply {
+//                rotationController.isEnabled = true
+//                scaleController.isEnabled = true
+//                setParent(scene)
+//                renderable = model
+//            }
+//            transformableNode.select()
+//
+//            scene.addOnPeekTouchListener { hitTestResult, motionEvent ->
+//                transformationSystem.onTouch(hitTestResult, motionEvent)
+//            }
+//            scene.addChild(transformableNode)
+//        }
     }
 
     abstract inner class AbsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

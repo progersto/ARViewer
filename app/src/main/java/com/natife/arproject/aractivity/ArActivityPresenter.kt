@@ -1,6 +1,6 @@
 package com.natife.arproject.aractivity
 
-import com.natife.arproject.ObjectForList
+import com.natife.arproject.entity.ObjectForList
 import com.natife.arproject.arobjectlist.ArObjectListContract
 import com.natife.arproject.arobjectlist.ArObjectListRepository
 

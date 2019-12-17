@@ -5,28 +5,29 @@ import android.app.Dialog
 import android.arch.lifecycle.Observer
 import android.content.Context
 import android.content.Intent
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import kotlinx.android.synthetic.main.activity_ar_object_list.*
-import android.view.WindowManager
 import android.support.v4.content.ContextCompat
+import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.GridLayoutManager
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import com.natife.arproject.*
-import com.natife.arproject.menubuttomdialog.MenuBottomDialogFragment
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.Toast
+import com.natife.arproject.MyApp
+import com.natife.arproject.R
+import com.natife.arproject.aractivity.ArActivity
 import com.natife.arproject.data.entityRoom.Model
 import com.natife.arproject.data.entityRoom.ModelDao
-import com.natife.arproject.aractivity.ArActivity
+import com.natife.arproject.menubuttomdialog.MenuBottomDialogFragment
 import com.natife.arproject.utils.REQUEST_AR_ACTIVITY
 import com.natife.arproject.utils.fistInit
 import com.natife.arproject.utils.isInit
+import kotlinx.android.synthetic.main.activity_ar_object_list.*
 import org.jetbrains.anko.startActivityForResult
 import javax.inject.Inject
 
@@ -46,7 +47,17 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
     private var addFlag: Boolean = false
     private lateinit var imm: InputMethodManager
     private lateinit var newListModel: MutableList<Model>
-
+//    private lateinit var session: Session
+//
+//    override fun onResume() {
+//        super.onResume()
+//        session = Session(this)
+//        // IMPORTANT!!!  ArSceneView requires the `LATEST_CAMERA_IMAGE` non-blocking update mode.
+//
+//        val config = Config(session)
+//        config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
+//        session.configure(config)
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,7 +125,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
             imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
         }
         clearImage.setOnClickListener {
-           hideSearch()
+            hideSearch()
         }
         addFolder.setOnClickListener { _ ->
             addFlag = true
@@ -159,15 +170,16 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
                 // 3D show
                 if (searchIcon.visibility == View.GONE) hideSearch()
                 startActivityForResult<ArActivity>(REQUEST_AR_ACTIVITY,
-                        "name" to recyclerlist[position].vrImage)
+                        "link" to recyclerlist[position].vrLink,
+                        "name" to recyclerlist[position].name)
             }
 
             override fun onItemObjLongClick(position: Int, res: Int) {
                 // 2D show
-               if (searchIcon.visibility == View.GONE) hideSearch()
+                if (searchIcon.visibility == View.GONE) hideSearch()
                 startActivityForResult<ArActivity>(REQUEST_AR_ACTIVITY,
                         "resImage" to res,
-                        "name" to recyclerlist[position].vrImage)
+                        "name" to recyclerlist[position].name)
             }
 
             override fun onItemFolderClick(position: Int) {
@@ -206,7 +218,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
             newListModel.clear()
             for (i in recyclerlist.indices) {
                 var name = recyclerlist[i].name
-                name = name.substring(0, 1).toLowerCase() + name.substring(1);
+                name = name.substring(0, 1).toLowerCase() + name.substring(1)
                 if (name.contains(s, true) || recyclerlist[i].type == Model.TEXT_TYPE) {
                     newListModel.add(recyclerlist[i])
                 }
@@ -244,7 +256,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         recyclerAr.itemAnimator = DefaultItemAnimator()
         recyclerAr.adapter = adapter
         if (parentFolderId == null) {
-            if (searchIcon.visibility == View.VISIBLE){
+            if (searchIcon.visibility == View.VISIBLE) {
                 headText.visibility = View.GONE
                 logoTextImage.visibility = View.VISIBLE
             }
@@ -253,7 +265,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         } else {
             info.visibility = View.GONE
             back.visibility = View.VISIBLE
-            if (searchIcon.visibility == View.VISIBLE){
+            if (searchIcon.visibility == View.VISIBLE) {
                 logoTextImage.visibility = View.GONE
                 headText.visibility = View.VISIBLE
             }
@@ -339,7 +351,7 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_AR_ACTIVITY && resultCode == Activity.RESULT_OK){
+        if (requestCode == REQUEST_AR_ACTIVITY && resultCode == Activity.RESULT_OK) {
             Toast.makeText(this, getString(R.string.for_continue_install_ARCore), Toast.LENGTH_LONG).show()
         }
     }

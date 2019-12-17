@@ -16,8 +16,8 @@ class Model (@PrimaryKey(autoGenerate = true)
              @ColumnInfo(name = "image")
              var image: Int? = null,
 
-             @ColumnInfo(name = "vrImage")
-             var vrImage: String? = null,
+             @ColumnInfo(name = "vrLink")
+             var vrLink: String,
 
              @ColumnInfo(name = "parentFolderId")
              var parentFolderId: Int? = null){
