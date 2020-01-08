@@ -28,6 +28,7 @@ import com.natife.arproject.utils.REQUEST_AR_ACTIVITY
 import com.natife.arproject.utils.fistInit
 import com.natife.arproject.utils.isInit
 import kotlinx.android.synthetic.main.activity_ar_object_list.*
+import kotlinx.android.synthetic.main.item_ar.view.*
 import org.jetbrains.anko.startActivityForResult
 import javax.inject.Inject
 
@@ -354,6 +355,19 @@ class ArObjectListActivity : AppCompatActivity(), ArObjectListContract.View, OnM
         if (requestCode == REQUEST_AR_ACTIVITY && resultCode == Activity.RESULT_OK) {
             Toast.makeText(this, getString(R.string.for_continue_install_ARCore), Toast.LENGTH_LONG).show()
         }
+    }
+
+    override fun onDestroy() {
+
+        val pos = recyclerAr.childCount -1
+        for (i in 0..pos) {
+            val holder = recyclerAr.getChildViewHolder(recyclerAr.getChildAt(i))
+            if(holder.itemViewType == 2){
+                holder.itemView.scene_container.removeAllViews()
+
+            }
+        }
+        super.onDestroy()
     }
 }
 

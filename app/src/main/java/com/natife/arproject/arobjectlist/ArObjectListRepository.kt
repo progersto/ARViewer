@@ -43,6 +43,13 @@ class ArObjectListRepository : ArObjectListContract.Repository {
                 "https://raw.githubusercontent.com/progersto/test/master/app/src/main/assets/archive%20(3)/model.gltf", null))
         listImage.add(Model(null, Model.IMAGE_TYPE, "CesiumMan", R.drawable.uranus,
                 "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF/CesiumMan.gltf", null))
+        listImage.add(Model(null, Model.IMAGE_TYPE, ",buggy", R.drawable.tricycle,
+                "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Buggy/glTF/Buggy.gltf", null))
+        listImage.add(Model(null, Model.IMAGE_TYPE, "трек", R.drawable.tricycle,
+                "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf", null))
+        listImage.add(Model(null, Model.IMAGE_TYPE, "бумбокс", R.drawable.tricycle,
+                "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoomBox/glTF/BoomBox.gltf", null))
+
         return listImage
     }
 

@@ -1,28 +1,24 @@
 package com.natife.arproject.arobjectlist
 
 import android.net.Uri
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
-import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.RelativeLayout
-import android.widget.TextView
-import com.google.ar.core.Session
 import com.google.ar.sceneform.Node
-import com.google.ar.sceneform.Scene
+import com.google.ar.sceneform.SceneView
 import com.google.ar.sceneform.assets.RenderableSource
 import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.rendering.ModelRenderable
-import com.google.ar.sceneform.ux.FootprintSelectionVisualizer
-import com.google.ar.sceneform.ux.TransformableNode
-import com.google.ar.sceneform.ux.TransformationSystem
 import com.natife.arproject.R
 import com.natife.arproject.data.entityRoom.Model
 import kotlinx.android.synthetic.main.item_ar.view.*
 import kotlinx.android.synthetic.main.item_folder.view.*
 import kotlinx.android.synthetic.main.item_name_directory.view.*
+import org.jetbrains.anko.backgroundColor
 
 class MultiViewTypeAdapter(
         private val list: MutableList<Model>,
@@ -30,8 +26,7 @@ class MultiViewTypeAdapter(
         private val move: Boolean,
         private val idMovable: Int
 //        private var session: Session
-)
-    : RecyclerView.Adapter<MultiViewTypeAdapter.AbsViewHolder>() {
+) : RecyclerView.Adapter<MultiViewTypeAdapter.AbsViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MultiViewTypeAdapter.AbsViewHolder {
         val view: View
@@ -89,16 +84,11 @@ class MultiViewTypeAdapter(
 
 
     inner class ImageTypeViewHolder(itemView: View) : AbsViewHolder(itemView) {
-        lateinit var scene: Scene
-        lateinit var cupCakeNode: Node
-
         override fun onBindViewHolder(model: Model) {
             itemView.nameItemImage.text = model.name
 
-            scene = itemView.sceneView.scene
-//            itemView.sceneView.setupSession(session)
-            itemView.sceneView.resume()
-            renderObject( getRanderableSource(model.vrLink)) // Render the object
+            itemView.scene_container.removeAllViews()
+            val sceneView = SceneView(itemView.context)
 
             if (move) {
                 itemView.menuImageItem.visibility = View.GONE
@@ -107,10 +97,10 @@ class MultiViewTypeAdapter(
                 itemView.menuImageItem.setOnClickListener {
                     imageListener.onItemMenuClick(adapterPosition)
                 }
-                itemView.sceneView.setOnClickListener {
+                sceneView.setOnClickListener {
                     imageListener.onItemObjClick(adapterPosition)
                 }
-                itemView.sceneView.setOnLongClickListener {
+                sceneView.setOnLongClickListener {
                     imageListener.onItemObjLongClick(adapterPosition, model.image!!)
                     return@setOnLongClickListener true
                 }
@@ -118,24 +108,28 @@ class MultiViewTypeAdapter(
                 itemView.menuImageItem.visibility = View.VISIBLE
                 itemView.backgroundMove.visibility = View.GONE
             }
+
+            sceneView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            sceneView.backgroundColor = ContextCompat.getColor(itemView.context, R.color.colorAccent)
+            itemView.scene_container.addView(sceneView)
+
+            val sceneFromContainer = itemView.scene_container.getChildAt(0) as SceneView
+            renderObject(getRanderableSource(model.vrLink), model.name, sceneFromContainer) // Render the object
+
+//            itemView.sceneView.setupSession(session)
+
         }
 
-        private fun renderObject(parse: RenderableSource?) {
+        private fun renderObject(source: RenderableSource?, name: String, sceneView: SceneView) {
             ModelRenderable.builder()
-                    .setSource(itemView.context, parse)
+                    .setSource(itemView.context, source)
                     .build()
                     .thenAccept {
-                        addNodeToScene(it)
+                        addNodeToScene(it, name, sceneView)
                     }
                     .exceptionally {
-                        val builder = AlertDialog.Builder(itemView.context)
-                        builder.setMessage(it.message)
-                                .setTitle("error!")
-                        val dialog = builder.create()
-                        dialog.show()
                         return@exceptionally null
                     }
-
         }
 
         private fun getRanderableSource(link: String): RenderableSource? {
@@ -148,16 +142,19 @@ class MultiViewTypeAdapter(
                     .build()
         }
 
-        private fun addNodeToScene(model: ModelRenderable?) {
+        private fun addNodeToScene(model: ModelRenderable?, modelName: String, sceneView: SceneView) {
             model?.let {
-                cupCakeNode = Node().apply {
+                Node().apply {
                     setParent(scene)
                     localPosition = Vector3(0f, 0f, -2.4f)
                     localScale = Vector3(3f, 3f, -2f)
+                    name = modelName
                     renderable = it
-                }
 
-                scene.addChild(cupCakeNode)
+                    sceneView.scene.addChild(this)
+                    sceneView.resume()
+//                    itemView.progressBar.visibility = View.GONE
+                }
             }
         }
 

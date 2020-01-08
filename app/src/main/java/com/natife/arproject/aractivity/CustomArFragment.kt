@@ -2,6 +2,9 @@ package com.natife.arproject.aractivity
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -202,6 +205,7 @@ class CustomArFragment : ArFragment(), Scene.OnUpdateListener, OnCreator, ArActi
                     progressBar.visibility = View.GONE
                 }
                 cloudState == Anchor.CloudAnchorState.SUCCESS -> {
+                    //todo здесь может currentContainer быть null, если долго грузится модель
                     val cloudAnchorId = cloudAnchor?.cloudAnchorId//get long id code anchor
                     listNode.add(ObjectForList(cloudAnchorId, name, link, resImage, currentContainer!!.localScale.x))//save data object
                     currentContainer = null
